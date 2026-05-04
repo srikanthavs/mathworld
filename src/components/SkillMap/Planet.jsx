@@ -12,7 +12,7 @@ export default function Planet({ skill, cx, cy, onTap }) {
 
   return (
     <button
-      onClick={() => !isLocked && onTap(skill)}
+      onClick={() => onTap(skill)}
       className="absolute btn-bounce"
       style={{
         left: cx, top: cy,
@@ -23,7 +23,7 @@ export default function Planet({ skill, cx, cy, onTap }) {
           ? 'radial-gradient(circle at 35% 30%, #d1d5db, #9ca3af 70%)'
           : `radial-gradient(circle at 35% 30%, #ffffff, ${skill.color} 55%, ${shade(skill.color, -25)} 100%)`,
         border: 'none',
-        cursor: isLocked ? 'not-allowed' : 'pointer',
+        cursor: 'pointer',
         outline: 'none',
         opacity: isLocked ? 0.55 : 1,
         padding: 0,

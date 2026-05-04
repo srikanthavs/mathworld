@@ -13,7 +13,7 @@ const KEYS = {
   sessions: 'mathworld_sessions',
 };
 
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 const MAX_SESSIONS   = 50;
 
 // ─── Skill node IDs in unlock order ───────────────────────────────────────────
@@ -88,12 +88,15 @@ function defaultChild() {
   };
 }
 
-function defaultSkillRecord(isFirst = false) {
+// Level 1 skills Advaith can explore from day one — he is already strong at maths.
+const LEVEL_1_IDS = new Set(SKILL_IDS.slice(0, 10));
+
+function defaultSkillRecord(status = 'locked') {
   return {
-    status:         isFirst ? 'exploring' : 'locked',
+    status,
     accuracy:       0,
-    recentAccuracy: [],   // last 3 session accuracies
-    errorLog:       [],   // { type, count, sessionId }
+    recentAccuracy: [],
+    errorLog:       [],
     sessionsCount:  0,
     masteredAt:     null,
   };
@@ -101,8 +104,8 @@ function defaultSkillRecord(isFirst = false) {
 
 function defaultSkills() {
   const skills = {};
-  SKILL_IDS.forEach((id, i) => {
-    skills[id] = defaultSkillRecord(i === 0);
+  SKILL_IDS.forEach(id => {
+    skills[id] = defaultSkillRecord(LEVEL_1_IDS.has(id) ? 'exploring' : 'locked');
   });
   return skills;
 }
@@ -111,6 +114,8 @@ function defaultSkills() {
 
 export function initStorage() {
   const version = read(KEYS.version);
+
+  // Fresh install
   if (!version) {
     write(KEYS.version,  { schema: SCHEMA_VERSION, createdAt: new Date().toISOString() });
     write(KEYS.child,    defaultChild());
@@ -118,7 +123,19 @@ export function initStorage() {
     write(KEYS.sessions, []);
     return { fresh: true };
   }
-  // Future: handle version.schema < SCHEMA_VERSION migrations here
+
+  // v1 → v2: unlock all Level 1 skills so Advaith can play immediately
+  if (version.schema < 2) {
+    const skills = read(KEYS.skills) ?? {};
+    LEVEL_1_IDS.forEach(id => {
+      if (!skills[id] || skills[id].status === 'locked') {
+        skills[id] = { ...(skills[id] ?? defaultSkillRecord()), status: 'exploring' };
+      }
+    });
+    write(KEYS.skills,  skills);
+    write(KEYS.version, { ...version, schema: 2 });
+  }
+
   return { fresh: false };
 }
 
