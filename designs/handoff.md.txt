@@ -1,0 +1,179 @@
+Claude
+MathWorld — Design Handoff Document
+Status: 3 of 11 screens built (Skill World Map, Skill Detail, Parent Dashboard). Same design system applies to all remaining screens.
+
+1. Design System Summary
+Color Tokens
+Token	Hex	Usage
+--primary	#6C3CE1	Deep purple — Explore mode, Archie, primary CTAs, brand
+--primary-deep	#4B22A8	Purple shadows, hat band, gradient ends
+--secondary	#FF6B35	Orange — Challenge mode, streak, secondary accents
+--accent	#FFD93D	Sunshine yellow — stars, mastered state, sun
+--success	#6BCB77	Green — correct, mastered, ✓ checks
+--error	#FF6B6B	Warm coral — wrong answers, never harsh red
+--bg	#FAFAFA	App background
+--ink	#1b1330	Body text
+--ink2	#2a1a55	Headings text
+Mode zones		
+Practice (blue)	#3B82F6 / soft #E5EFFF	
+Speed (yellow)	#FFB300 / soft #FFF5D6	
+Locked grey	#9CA3AF / #E5E7EB	
+Muted text	#6b7280 (secondary), #9ca3af (tertiary)	
+Card border	#F1ECFA, dashed #E5DCFA	
+Typography
+Headings: Fredoka One (Google Fonts) — display, friendly rounded
+Body: Nunito (400/600/700/800/900)
+Sizes (child screens):
+Hero title: 40px Fredoka
+Section title: 22–24px Fredoka
+Card title: 18–20px Fredoka
+Body: 15–16px Nunito 700
+Min child-facing text: 20px body, 13px for parent dashboard meta only
+Sizes (parent dashboard):
+Section title: 22px Fredoka
+Body: 13–14px Nunito 600/700
+Eyebrow / labels: 10–12px uppercase, tracking-wider, #9ca3af
+Spacing
+Container padding: 28px (px-7) outer, 24px (px-6) inner cards
+Card internal padding: 20–24px (p-5/p-6)
+Grid gaps: 12px (chips), 16px (mode cards), 20–32px (sections)
+Stack gaps: gap-2 (8px) for meta rows, gap-4 (16px) for content blocks, gap-5 (20px) for sections
+Border Radius
+Element	Radius
+Pills / buttons / chips	999px (rounded-full)
+Small chips	12px (rounded-xl)
+Cards / panels	20px (rounded-2xl)
+Hero cards / popups	28–32px (rounded-3xl / rounded-[28px])
+Bubble (speech)	22px
+Planet / orb	50%
+Shadow Styles
+/* Soft card (parent dashboard) */
+box-shadow: 0 6px 22px rgba(75,34,168,0.06);
+
+/* Lifted card (child screens) */
+box-shadow: 0 18px 40px rgba(75,34,168,0.10);
+
+/* Floating chip (HUD pill) */
+box-shadow: 0 10px 28px rgba(75,34,168,0.18);
+
+/* Mode CTA button */
+box-shadow: 0 18px 40px <mode-color>55;  /* 33% alpha mode color */
+
+/* Mastered planet (gold ring) */
+box-shadow: 0 0 0 5px #FFD93D, 0 0 0 10px rgba(255,217,61,.35), 0 18px 40px rgba(255,170,30,.45);
+
+/* Planet drop shadow */
+filter: drop-shadow(0 18px 40px rgba(75,34,168,0.35));
+Animations
+Trigger	Animation	Duration
+Button press	scale(0.95) press, translateY(-2px) hover	140ms ease
+Planet pop-in	spring scale 0→1 with stagger by level	~300ms
+Unlocked planet	pulsing colored ring (pulseRing keyframe)	2.6s loop
+Mastered planet	gold ring + crown star, no animation	static
+Sun rays	slow rotate 360°	60s linear loop
+Dust orbits	rotate around planet	60s / 120s loops
+Archie	gentle vertical bob (drift)	4s ease-in-out loop
+Wand sparkles	scale + rotate flicker	1.6s loop
+XP bar	yellow shimmer sweep	2.4s linear loop
+Mode change (Screen 1)	planets re-spring; bg tint cross-fades	280ms
+Popup / modal	scale 0.85→1 + opacity, blurred backdrop	280ms cubic-bezier(.34,1.56,.64,1)
+For remaining screens (per spec):		
+Correct answer	confetti/star burst from answer	~800ms
+Wrong answer	gentle wobble (rotate ±3°), never red X	400ms
+Skill unlock	full-screen celebration, Archie level-up transform	2–3s
+Screen transitions	slide or fade, never hard cut	280–400ms
+Touch Targets
+Minimum tappable height: 60px (child screens), 44–48px (parent screens)
+Minimum tappable width: 60px for icons, content-sized for labeled buttons
+Min spacing between targets: 8px (gap-2)
+Extra padding: invisible hit-area extends ~8px outside visible chrome on small targets
+2. Component Inventory
+Component	Where it appears	Props / Variants
+Archie	Every child screen	size (120/160/180), level (number), mood ("wave" / "celebrate" / "think" / "point" / "cheer")
+ArchieIcon	Parent dashboard, PIN screen	size, level — static, no animation
+Planet	Skill World Map	skill, cx, cy, onTap, focus — derives state (locked/unlocked/mastered) and color from skill
+BigPlanet	Skill Detail	skill — hero variant with orbit, dust ring, moon, stars badge
+Sun	Skill World Map center	mode — pulsing center brand mark with rays
+HUD	Skill World Map top bar	onParent callback — child name chip, streak, stars, XP bar, parent lock
+Header	Parent Dashboard	onLogout — sticky version with metric chips
+ModeBar	Skill World Map	mode, setMode — 4 mode pills with active pip
+ModeCard	Skill Detail	mode, onLaunch — large gradient launch card with icon, tagline, CTA, "Recommended" badge, locked variant
+SkillPopup	Skill World Map	skill, mode, onClose — tappable modal stub
+MasteryRing	Skill Detail	mastery: {concrete, pictorial, abstract} — concentric SVG arcs
+LayerChip	Skill Detail	label, val, color, active — Concrete/Pictorial/Abstract chip with progress
+SkillCell	Parent Dashboard	s (skill object) — three variants: mastered (green), in-progress (yellow + accuracy), locked (grey dashed)
+Metric	Parent Dashboard header	label, valueNode — boxed mini-stat
+SectionHead	Parent Dashboard	eyebrow, title, subtitle?, right? — consistent section header
+AccuracyPill	Sessions table	val (0–1) — colored bar + % label, thresholds at 80/60
+Tag / Legend	Various	dot, label, count? — dot + text indicator
+PinScreen	Parent gate	onSuccess callback — 4-digit numeric pad with shake on error
+ParentGate	Skill World Map	open, onClose — same numeric pad as modal sheet
+Bubble (CSS class)	Anywhere with Archie	.bubble (left tail) / .bubble.bottom-tail — speech bubble with colored border
+MotionShim	Internal (Screen 1)	Drop-in <motion.x> replacement using CSS transitions; supports initial/animate/whileHover/whileTap
+Stage	Each screen	Auto-scaling wrapper that fits 1200×800 / 1280×820 design to viewport
+3. Screen Inventory
+Screen 1 — Skill World Map (Home)
+Layout: Full-bleed cosmic canvas (1200×800) with starfield + radial gradient tinted by current mode. Pulsing MathWorld sun centered at (600, 400). Filtered orbital rings (1 ring if ≤8 planets, 2 rings if more) with planets evenly spaced. HUD top-left/right (greeting chip, streak, stars, Archie XP, parent lock). Mode banner top-left with counts. Archie + speech bubble bottom-left. Mode bar bottom-center.
+
+Key interactions: Tap any of 4 mode tabs → background tint, planet set, Archie copy, and orbital rings transition smoothly. Tap planet → opens stub popup with mastery, prereqs, and 4 mode launch CTAs. Tap parent lock → PIN sheet. Hover/tap micro-bounce on every interactive element.
+
+Connects to: Skill Detail (planet tap), Parent Dashboard (lock tap), and conceptually feeds all 4 learning modes via the popup CTAs.
+
+Screen 2 — Skill Detail
+Layout: Two-column 1280×820 canvas. Left column (440px): class chip → big planet hero with dust ring, moon, floating stars badge → skill title and subtitle → Archie pointing with contextual speech bubble. Right column (flex): Mastery card with concentric ring chart + description + 3 layer chips (Concrete/Pictorial/Abstract) → 2×2 grid of Mode Launch Cards (Recommended pip on Practice, Speed locked because Abstract isn't mastered) → 3-up footer row (Built-on prereqs ✓, Recent visits log, "Master to unlock" dashed yellow card).
+
+Key interactions: Back to Map button (top-left), mode card tap launches that mode for this skill, locked Speed card stays disabled with explanation, suggest-activity buttons are touch targets parents could tap.
+
+Connects to: Back to Skill World Map; forward to all 4 learning modes (Explore/Practice/Challenge/Speed) carrying the selected skill context.
+
+Screen 11 — Parent Dashboard
+Layout: Scrollable single page behind PIN gate (1234). Sticky header with Archie L3 icon, child name, and 4 metric chips (level/XP, stars, streak, last session) plus "🔒 Lock" button. Body is a 1.45:1 two-column grid: left column = Skill Progress Overview (4-col grid of all 23 skills grouped by Level 1/2/3 with mastered/in-progress/locked variants) and Last 7 Sessions table (date, skill, mode pill, accuracy bar, duration). Right column = Top 3 Weak Areas (numbered cards with error-type pill, attempts, plain-English advice, suggest-activity CTA) and Weekly Activity bar chart (purple gradient bars, ★ best-day pip, gridlines, auto-summary sentence).
+
+Key interactions: PIN entry with shake-on-error and auto-submit at 4 digits. Lock button returns to PIN screen. Suggest-activity buttons open per-skill coaching prompts (not built — Claude Code to wire). Hover lift on cards.
+
+Connects to: Reached via discreet 🔒 lock icon on Skill World Map. "Lock" button returns parent to MathWorld home.
+
+4. What Was NOT Built — Remaining Screens for Claude Code
+All remaining screens must follow the design system above. Each screen must show Archie somewhere (mood appropriate to context) and use the mode color zone indicated.
+
+Screen 3 — Explore Mode (Purple zone)
+Active learning canvas with draggable manipulatives (blocks, coins, number lines, shapes). No score, no timer, no right/wrong. Archie narrates a small story in a persistent speech bubble. Top bar: skill name, exit, mode pill. Workspace: tappable/draggable objects with snap-to-grid feel. Bottom: "next idea" button to advance Archie's narration.
+
+Screen 4 — Practice Mode: Concrete Layer (Blue zone)
+Visual problem with manipulatives the child arranges. e.g. "Show 23 + 14 with blocks." Drop zones for tens/ones, "Check my answer" button. Layer progress bar at top showing Concrete → Pictorial → Abstract.
+
+Screen 5 — Practice Mode: Abstract + Reasoning (Blue zone)
+Equation form (e.g. 23 + 14 = ?) with 4 large answer tiles. After correct answer, second card slides in: "How did you know?" with 2–3 reasoning choice buttons. Archie reacts to choice.
+
+Screen 6 — Wrong Answer + Hint (Blue zone)
+Gentle wobble on the answer, never harsh red. Archie animates to "thinking" pose. Hint card appears, classified by error type:
+
+Conceptual → different visual representation
+Calculation → simplified numbers, same concept
+Careless → "slow down, double-check" prompt with re-presentation of question
+"Try again" button. No penalty until 3 wrong.
+
+Screen 7 — Correct Answer Celebration (mid-session)
+Star burst / confetti from the answer location. Archie cheers (wand up, sparkle pulse). +XP toast slides in. Auto-advance after ~1.2s. Inline, non-blocking.
+
+Screen 8 — Skill Completed / Unlocked (full-screen)
+Full-screen takeover. Archie levels up with transform animation (new color in robe trim, new wand glow, "LV 5" hat band). Big "Planet Mastered!" banner. Gold ring grows around planet. Show stars earned (e.g. 9/9), skills now unlocked next, "Back to Map" CTA. Optional confetti.
+
+Screen 9 — Challenge Mode (Orange zone)
+Big real-world word problem in a card (no scaffolding). Archie wears a thinking cap (variant of Archie SVG with cap added). Hint button costs 1 star. Single text answer or short multiple-choice. "Deep Thinker" badge teased at corner if answered without hint.
+
+Screen 10 — Speed Mode with Timer (Yellow zone)
+Duration picker first (60s / 90s pills). Then: large countdown ring, fact question center, 4 large answer tiles. Streak counter with Archie running faster as correct answers stack (Archie variant with motion lines). End screen: accuracy %, total answered, "Run again" / "Back to Map".
+
+Screen 12 — Design System Summary (optional internal doc)
+Already produced — this document.
+
+Implementation Notes for Claude Code
+Use React + Tailwind. Framer Motion is preferred for animations; the existing screens use a thin shim because of UMD loading — feel free to replace with the real package in a proper build.
+Fonts: load Fredoka One + Nunito (400/600/700/800/900) from Google Fonts.
+Tablet-first at 1024×768 minimum, scale up cleanly to desktop. Each screen wraps in a <Stage> that auto-scales a fixed-size canvas to viewport.
+No dark backgrounds on any child screen. Backgrounds are tinted radial gradients keyed off the mode color.
+Archie appears on every child screen; pose matches context (point, celebrate, think with cap, run, level-up).
+Errors are warm, never harsh — coral wobble, not red flash. Wrong answers go straight into the hint flow.
+All interactive elements ≥ 60px on child screens.
+State persistence is your job — these prototypes are presentational only.

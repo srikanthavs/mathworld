@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>MathWorld — Skill Detail</title>
+<meta name="viewport" content="width=1200, initial-scale=1" />
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  :root{
+    --primary:#6C3CE1;--primary-deep:#4B22A8;--secondary:#FF6B35;--accent:#FFD93D;
+    --success:#6BCB77;--error:#FF6B6B;--bg:#FAFAFA;--ink:#1b1330;--ink2:#2a1a55;
+  }
+  html,body,#root{height:100%}
+  body{margin:0;font-family:'Nunito',system-ui,sans-serif;font-size:20px;color:var(--ink);background:#FAFAFA;overflow:hidden}
+  .font-display{font-family:'Fredoka One',cursive;font-weight:400;letter-spacing:.2px}
+  *{-webkit-tap-highlight-color:transparent;user-select:none}
+  .btn-bounce{transition:transform 140ms ease, box-shadow 140ms ease}
+  .btn-bounce:hover{transform:translateY(-2px)}
+  .btn-bounce:active{transform:scale(.95)}
+  @keyframes drift{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  .drift{animation:drift 4s ease-in-out infinite}
+  @keyframes spinSlow{to{transform:rotate(360deg)}}
+  .spin-slow{animation:spinSlow 60s linear infinite}
+  .spin-slower{animation:spinSlow 120s linear infinite}
+  @keyframes shimmer{0%{background-position:-200px 0}100%{background-position:200px 0}}
+  .shimmer{background:linear-gradient(90deg,#FFD93D 0%,#FFE980 50%,#FFD93D 100%);background-size:200px 100%;animation:shimmer 2.4s linear infinite}
+  @keyframes sparkle{0%,100%{opacity:.4;transform:scale(.8) rotate(0)}50%{opacity:1;transform:scale(1.1) rotate(20deg)}}
+  .sparkle{animation:sparkle 1.6s ease-in-out infinite;transform-origin:center}
+  @keyframes pulseRing{0%,100%{box-shadow:0 0 0 0 var(--ring)}50%{box-shadow:0 0 0 18px transparent}}
+  .pulse-ring{animation:pulseRing 2.6s ease-in-out infinite}
+  .planet-shadow{filter:drop-shadow(0 18px 40px rgba(75,34,168,.35))}
+  .gold-ring{box-shadow:0 0 0 5px #FFD93D, 0 0 0 10px rgba(255,217,61,.35), 0 18px 40px rgba(255,170,30,.45)}
+  .scene-bg{
+    background:
+      radial-gradient(900px 600px at 22% 30%, #F2EBFF 0%, transparent 65%),
+      radial-gradient(900px 600px at 88% 80%, #FFEEE3 0%, transparent 60%),
+      radial-gradient(700px 500px at 70% 12%, #FFF6E0 0%, transparent 65%),
+      #FAFAFA;
+  }
+  .stars::before{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background-image:
+      radial-gradient(1.5px 1.5px at 8% 22%, rgba(108,60,225,.3) 50%, transparent 51%),
+      radial-gradient(1.2px 1.2px at 18% 78%, rgba(255,107,53,.3) 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 28% 12%, rgba(255,217,61,.5) 50%, transparent 51%),
+      radial-gradient(1px 1px at 42% 88%, rgba(108,60,225,.35) 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 62% 24%, rgba(107,203,119,.4) 50%, transparent 51%),
+      radial-gradient(1.2px 1.2px at 73% 72%, rgba(108,60,225,.35) 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 86% 36%, rgba(255,217,61,.55) 50%, transparent 51%),
+      radial-gradient(1px 1px at 92% 64%, rgba(255,107,53,.4) 50%, transparent 51%);
+  }
+  .bubble{position:relative;background:#fff;border:3px solid #6C3CE1;border-radius:22px;padding:14px 18px;box-shadow:0 10px 28px rgba(75,34,168,.18)}
+  .bubble.bottom-tail::after{content:"";position:absolute;left:38px;bottom:-14px;border:12px solid transparent;border-top-color:#6C3CE1;border-bottom:0}
+  .bubble.bottom-tail::before{content:"";position:absolute;left:42px;bottom:-9px;border:9px solid transparent;border-top-color:#fff;border-bottom:0;z-index:1}
+  .ring-track{stroke:#EFE7FF;stroke-width:14;fill:none;stroke-linecap:round}
+  .ring-fill{stroke-width:14;fill:none;stroke-linecap:round}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="env,react">
+const { useState, useEffect, useMemo, useRef } = React;
+
+function shade(hex, percent){
+  const n=parseInt(hex.replace("#",""),16);
+  const r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+  const t=percent<0?0:255,p=Math.abs(percent)/100;
+  const nr=Math.round((t-r)*p)+r, ng=Math.round((t-g)*p)+g, nb=Math.round((t-b)*p)+b;
+  return "#"+((1<<24)+(nr<<16)+(ng<<8)+nb).toString(16).slice(1);
+}
+
+/* ----- Archie (compact, pointing pose for detail screen) ----- */
+function Archie({size=160, level=4, mood="point"}){
+  const wandRot = mood==="celebrate"?-25:mood==="point"?-45:-10;
+  return (
+    <div className="relative drift" style={{width:size, height:size*1.15}}>
+      <svg viewBox="0 0 200 230" width={size} height={size*1.15}>
+        <g className="sparkle" style={{transformOrigin:"30px 30px"}}>
+          <path d="M30 12 L33 26 L47 30 L33 34 L30 48 L27 34 L13 30 L27 26 Z" fill="#FFD93D"/>
+        </g>
+        <g className="sparkle" style={{transformOrigin:"170px 60px", animationDelay:".6s"}}>
+          <path d="M170 46 L172 56 L182 60 L172 64 L170 74 L168 64 L158 60 L168 56 Z" fill="#FF6B35"/>
+        </g>
+        <path d="M55 175 Q100 130 145 175 L160 215 Q100 230 40 215 Z" fill="#6C3CE1"/>
+        <path d="M40 215 Q100 230 160 215" stroke="#FFD93D" strokeWidth="5" fill="none"/>
+        <path d="M100 185 L104 196 L116 198 L107 206 L110 218 L100 212 L90 218 L93 206 L84 198 L96 196 Z" fill="#FFD93D"/>
+        <rect x="88" y="118" width="24" height="20" rx="6" fill="#F2C99B"/>
+        <circle cx="100" cy="100" r="40" fill="#F8D6AB"/>
+        <circle cx="78" cy="108" r="6" fill="#FF9AA2" opacity=".7"/>
+        <circle cx="122" cy="108" r="6" fill="#FF9AA2" opacity=".7"/>
+        <circle cx="86" cy="98" r="5" fill="#1b1330"/>
+        <circle cx="114" cy="98" r="5" fill="#1b1330"/>
+        <circle cx="87.5" cy="96.5" r="1.6" fill="#fff"/>
+        <circle cx="115.5" cy="96.5" r="1.6" fill="#fff"/>
+        <path d="M86 116 Q100 128 114 116" stroke="#1b1330" strokeWidth="3" fill="none" strokeLinecap="round"/>
+        <path d="M70 78 Q85 60 100 72 Q115 60 130 78 Q120 70 100 74 Q80 70 70 78 Z" fill="#3a2a6e"/>
+        <path d="M55 78 Q100 -10 145 78 Z" fill="#6C3CE1"/>
+        <ellipse cx="100" cy="78" rx="52" ry="9" fill="#4B22A8"/>
+        <rect x="58" y="74" width="84" height="10" rx="3" fill="#FFD93D"/>
+        <text x="100" y="83" textAnchor="middle" fontFamily="Fredoka One" fontSize="10" fill="#6C3CE1">★ LV {level}</text>
+        <path d="M100 28 L104 40 L116 42 L107 50 L110 62 L100 56 L90 62 L93 50 L84 42 L96 40 Z" fill="#FFD93D"/>
+        <g transform={`rotate(${wandRot} 150 150)`}>
+          <line x1="150" y1="170" x2="178" y2="118" stroke="#3a2a6e" strokeWidth="5" strokeLinecap="round"/>
+          <path d="M178 102 L182 116 L196 118 L183 124 L186 138 L176 130 L168 142 L170 128 L160 122 L173 118 Z" fill="#FFD93D"/>
+        </g>
+        <circle cx="150" cy="170" r="8" fill="#F8D6AB"/>
+        <circle cx="58" cy="170" r="8" fill="#F8D6AB"/>
+      </svg>
+    </div>
+  );
+}
+
+/* ----- Skill data ----- */
+const SKILL = {
+  id:"addD", name:"Two-Digit Addition", sub:"Adding numbers up to 99",
+  level:1, classLabel:"Class 1 · Foundation",
+  status:"unlocked", color:"#FF6B35", icon:"+",
+  description:"Add two-digit numbers without regrouping. We'll start with blocks, then move to drawings, then equations.",
+  // mastery per layer 0..1
+  mastery:{ concrete:1.0, pictorial:0.65, abstract:0.20 },
+  starsEarned:6, starsTotal:9,
+  prereqs:[
+    { name:"Number Sense 1→100", done:true },
+    { name:"Place Value (T·O)",  done:true },
+    { name:"Single-Digit Add",   done:true },
+  ],
+  unlocks:[
+    { name:"Add with Carrying", level:2 },
+    { name:"Subtraction Two-Digit", level:1 },
+  ],
+  recent:[
+    { date:"Yesterday",  mode:"Practice", result:"3/3 correct", time:"6 min" },
+    { date:"2 days ago", mode:"Explore",  result:"Played with blocks", time:"4 min" },
+    { date:"3 days ago", mode:"Practice", result:"5/6 correct", time:"7 min" },
+  ],
+};
+
+const MODES = [
+  { id:"explore",  label:"Explore",   color:"#6C3CE1", icon:"🔮", tagline:"Play with blocks, coins and number lines.", cta:"Start playing", est:"~5 min", recommended:false },
+  { id:"practice", label:"Practice",  color:"#3B82F6", icon:"🧩", tagline:"Concrete → Pictorial → Abstract. Build it up!", cta:"Continue practice", est:"6–10 min", recommended:true },
+  { id:"challenge",label:"Challenge", color:"#FF6B35", icon:"🎩", tagline:"Real-world word problems. Hints cost a star.", cta:"Take the challenge", est:"8–12 min", recommended:false },
+  { id:"speed",    label:"Speed",     color:"#FFB300", icon:"⚡", tagline:"60-second drill. Mastered facts only.", cta:"Locked — master Abstract first", est:"60s", recommended:false, locked:true },
+];
+
+/* ----- Big planet visual ----- */
+function BigPlanet({skill}){
+  const c = skill.color;
+  return (
+    <div className="relative" style={{width:380, height:380}}>
+      {/* outer dotted orbit */}
+      <div className="absolute inset-0 rounded-full" style={{border:`2px dashed ${c}33`}}/>
+      {/* mid pulse ring */}
+      <div className="absolute rounded-full pulse-ring" style={{
+        inset:30, ['--ring']:`${c}55`,
+      }}/>
+      {/* dust orbit (rotates) */}
+      <div className="absolute inset-0 spin-slow">
+        {Array.from({length:18}).map((_,i)=>(
+          <div key={i} className="absolute rounded-full" style={{
+            left:"50%", top:"50%", width:5, height:5, marginLeft:-2.5, marginTop:-2.5,
+            background:`${c}88`,
+            transform:`rotate(${i*20}deg) translateX(190px)`
+          }}/>
+        ))}
+      </div>
+      {/* planet */}
+      <div className="absolute rounded-full planet-shadow" style={{
+        left:65, top:65, width:250, height:250,
+        background:`radial-gradient(circle at 35% 30%, #fff, ${c} 55%, ${shade(c,-30)} 100%)`,
+      }}>
+        {/* highlight */}
+        <div className="absolute rounded-full" style={{left:"18%",top:"15%",width:"32%",height:"22%",background:"radial-gradient(ellipse at center, rgba(255,255,255,.85), transparent 70%)",filter:"blur(2px)"}}/>
+        {/* surface spots */}
+        <div className="absolute rounded-full" style={{left:"55%",top:"30%",width:"14%",height:"14%",background:"rgba(0,0,0,.10)"}}/>
+        <div className="absolute rounded-full" style={{left:"30%",top:"60%",width:"18%",height:"12%",background:"rgba(0,0,0,.10)"}}/>
+        <div className="absolute rounded-full" style={{left:"65%",top:"62%",width:"10%",height:"10%",background:"rgba(0,0,0,.10)"}}/>
+        {/* glyph */}
+        <div className="absolute inset-0 grid place-items-center">
+          <div className="font-display text-white" style={{fontSize:120, textShadow:"0 6px 12px rgba(0,0,0,.3)"}}>{skill.icon}</div>
+        </div>
+      </div>
+      {/* moon */}
+      <div className="absolute rounded-full spin-slower" style={{
+        inset:0
+      }}>
+        <div className="absolute rounded-full" style={{
+          right:14, top:60, width:46, height:46,
+          background:`radial-gradient(circle at 35% 30%, #fff, #FFD93D 70%, #FF9100 100%)`,
+          boxShadow:"0 8px 16px rgba(255,170,30,.45)"
+        }}>
+          <div className="absolute inset-0 grid place-items-center font-display text-white" style={{fontSize:18}}>★</div>
+        </div>
+      </div>
+      {/* Stars badge floating */}
+      <div className="absolute drift" style={{left:-20, top:30}}>
+        <div className="bg-white rounded-2xl px-3 py-2 shadow-lg border-3 border-white flex items-center gap-2"
+             style={{boxShadow:"0 12px 28px rgba(75,34,168,.18)"}}>
+          <svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 2 L14.6 9 L22 9.5 L16 14 L18.5 21 L12 17 L5.5 21 L8 14 L2 9.5 L9.4 9 Z" fill="#FFD93D" stroke="#FF6B35" strokeWidth="1"/></svg>
+          <div className="leading-tight">
+            <div className="font-display text-[18px]" style={{color:"#FFB300"}}>{skill.starsEarned}/{skill.starsTotal}</div>
+            <div className="text-[11px] font-bold uppercase" style={{color:"#6b7280"}}>stars</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ----- Concentric mastery ring ----- */
+function MasteryRing({mastery}){
+  const layers = [
+    { key:"concrete",  label:"Concrete",  r:80,  color:"#6BCB77", val:mastery.concrete },
+    { key:"pictorial", label:"Pictorial", r:60,  color:"#3B82F6", val:mastery.pictorial },
+    { key:"abstract",  label:"Abstract",  r:42,  color:"#6C3CE1", val:mastery.abstract },
+  ];
+  const cx=100, cy=100;
+  return (
+    <div className="relative" style={{width:200, height:200}}>
+      <svg width="200" height="200" viewBox="0 0 200 200">
+        {layers.map(L=>{
+          const C = 2*Math.PI*L.r;
+          return (
+            <g key={L.key} transform={`rotate(-90 ${cx} ${cy})`}>
+              <circle cx={cx} cy={cy} r={L.r} className="ring-track"/>
+              <circle cx={cx} cy={cy} r={L.r} className="ring-fill"
+                      stroke={L.color}
+                      strokeDasharray={`${C*L.val} ${C}`}
+                      style={{transition:"stroke-dasharray 800ms ease"}}/>
+            </g>
+          );
+        })}
+        <circle cx={cx} cy={cy} r={32} fill="#fff"/>
+        <text x={cx} y={cy-2} textAnchor="middle" fontFamily="Fredoka One" fontSize="24" fill="#2a1a55">
+          {Math.round((mastery.concrete+mastery.pictorial+mastery.abstract)/3*100)}%
+        </text>
+        <text x={cx} y={cy+15} textAnchor="middle" fontFamily="Nunito" fontWeight="700" fontSize="10" fill="#6b7280" letterSpacing="1.5">
+          MASTERY
+        </text>
+      </svg>
+    </div>
+  );
+}
+
+/* ----- Mode launch card ----- */
+function ModeCard({mode, onLaunch}){
+  const locked = !!mode.locked;
+  return (
+    <button disabled={locked}
+      onClick={()=>onLaunch && onLaunch(mode)}
+      className="btn-bounce relative text-left rounded-3xl p-4 flex flex-col w-full"
+      style={{
+        background: locked ? "#F1F1F4" : `linear-gradient(160deg, ${mode.color}, ${shade(mode.color,-15)})`,
+        color: locked ? "#9CA3AF" : "white",
+        minHeight:160,
+        cursor: locked ? "not-allowed":"pointer",
+        boxShadow: locked ? "none" : `0 18px 40px ${mode.color}55`,
+        opacity: locked ? .85 : 1
+      }}>
+      {mode.recommended && (
+        <span className="absolute -top-3 right-5 bg-white rounded-full px-3 py-1 font-display text-[13px] flex items-center gap-1"
+              style={{color:mode.color, boxShadow:`0 6px 16px ${mode.color}55`}}>
+          ✨ Recommended
+        </span>
+      )}
+      <div className="flex items-center gap-3">
+        <span className="grid place-items-center rounded-2xl" style={{
+          width:46, height:46,
+          background: locked ? "#fff" : "rgba(255,255,255,.22)",
+          fontSize:26
+        }}>{mode.icon}</span>
+        <div className="leading-tight">
+          <div className="font-display text-[22px]">{mode.label}</div>
+          <div className="text-[11px] font-bold uppercase tracking-wide opacity-90">{mode.est}</div>
+        </div>
+      </div>
+      <div className="mt-2 font-bold text-[13px] leading-snug" style={{opacity: locked ? 1 : .95}}>{mode.tagline}</div>
+      <div className="mt-auto pt-3 flex items-center justify-between">
+        <span className="font-display text-[14px]">{mode.cta}</span>
+        {!locked && <span className="rounded-full bg-white/25 backdrop-blur px-3 py-1 text-[18px]">→</span>}
+        {locked && <span className="text-[18px]">🔒</span>}
+      </div>
+    </button>
+  );
+}
+
+/* ----- Layer chip ----- */
+function LayerChip({label, val, color, active}){
+  return (
+    <div className="flex-1 rounded-2xl p-3 flex flex-col gap-2"
+         style={{background: active ? "#fff" : "#F4F1FB", border: active?`3px solid ${color}`:"3px solid transparent"}}>
+      <div className="flex items-center justify-between">
+        <span className="font-display text-[15px]" style={{color:"#2a1a55"}}>{label}</span>
+        <span className="font-display text-[14px]" style={{color}}>{Math.round(val*100)}%</span>
+      </div>
+      <div className="h-2.5 rounded-full overflow-hidden" style={{background:"#EFE7FF"}}>
+        <div className="h-full rounded-full" style={{width:`${val*100}%`, background:color}}/>
+      </div>
+    </div>
+  );
+}
+
+/* ----- Skill Detail screen ----- */
+function SkillDetail(){
+  const skill = SKILL;
+  const c = skill.color;
+  return (
+    <div className="relative w-full h-full overflow-hidden scene-bg">
+      <div className="stars absolute inset-0"/>
+      {/* Top bar */}
+      <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-7 py-5">
+        <button className="btn-bounce flex items-center gap-2 bg-white rounded-full pl-3 pr-5 py-2 shadow-md border-2 border-white"
+                style={{minHeight:48}}>
+          <span className="grid place-items-center rounded-full" style={{width:32,height:32,background:"#EFE7FF", color:"#6C3CE1"}}>←</span>
+          <span className="font-display text-[16px]" style={{color:"#2a1a55"}}>Back to Map</span>
+        </button>
+        <div className="flex items-center gap-3">
+          <div className="bg-white/85 backdrop-blur rounded-full px-4 py-2 shadow border-2 border-white flex items-center gap-2">
+            <span style={{fontSize:20}}>🔥</span>
+            <span className="font-display text-[18px]" style={{color:"#FF6B35"}}>7</span>
+            <span className="text-[12px] font-bold uppercase" style={{color:"#6b7280"}}>day streak</span>
+          </div>
+          <div className="bg-white/85 backdrop-blur rounded-full px-4 py-2 shadow border-2 border-white flex items-center gap-2">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 2 L14.6 9 L22 9.5 L16 14 L18.5 21 L12 17 L5.5 21 L8 14 L2 9.5 L9.4 9 Z" fill="#FFD93D" stroke="#FF6B35" strokeWidth="1"/></svg>
+            <span className="font-display text-[18px]" style={{color:"#FFB300"}}>248</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Body grid */}
+      <div className="absolute inset-0 pt-[80px] pb-5 px-10 grid" style={{gridTemplateColumns:"440px 1fr", gap:32}}>
+        {/* Left — planet hero */}
+        <div className="relative flex flex-col items-center pt-2">
+          {/* class chip */}
+          <div className="rounded-full px-4 py-1.5 font-bold text-[13px] uppercase tracking-wider"
+               style={{background:`${c}22`, color:shade(c,-30)}}>
+            {skill.classLabel}
+          </div>
+          {/* planet */}
+          <div className="mt-4 relative">
+            <BigPlanet skill={skill}/>
+          </div>
+          {/* Title */}
+          <div className="mt-5 text-center max-w-[420px]">
+            <div className="font-display text-[40px] leading-tight" style={{color:"#2a1a55"}}>{skill.name}</div>
+            <div className="font-bold text-[16px] mt-1" style={{color:shade(c,-25)}}>{skill.sub}</div>
+          </div>
+          {/* Archie speech */}
+          <div className="mt-5 flex items-end gap-3">
+            <Archie size={120} mood="point"/>
+            <div className="bubble bottom-tail max-w-[290px] mb-6" style={{borderColor:c}}>
+              <div className="font-bold text-[15px]" style={{color:"#2a1a55", lineHeight:1.4}}>
+                Nice work, Advaith! You aced <b>Concrete</b>. Let's keep going on <b style={{color:c}}>Pictorial</b> next!
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right — info + modes */}
+        <div className="relative flex flex-col gap-4 min-h-0">
+          {/* Mastery card */}
+          <div className="bg-white rounded-3xl p-5 shadow-md border-2 border-white" style={{boxShadow:"0 18px 40px rgba(75,34,168,.10)"}}>
+            <div className="flex items-center gap-5">
+              <div className="shrink-0">
+                <MasteryRing mastery={skill.mastery}/>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[12px] font-bold uppercase tracking-wider" style={{color:"#9ca3af"}}>Your progress on this planet</div>
+                <div className="font-display text-[22px] mt-0.5" style={{color:"#2a1a55"}}>You're 62% mastered</div>
+                <div className="font-bold text-[13px] mt-1" style={{color:"#6b7280", lineHeight:1.4}}>{skill.description}</div>
+                <div className="flex gap-2 mt-3">
+                  <LayerChip label="Concrete"  val={skill.mastery.concrete}  color="#6BCB77" active={skill.mastery.concrete>=1}/>
+                  <LayerChip label="Pictorial" val={skill.mastery.pictorial} color="#3B82F6" active={skill.mastery.pictorial<1 && skill.mastery.pictorial>0}/>
+                  <LayerChip label="Abstract"  val={skill.mastery.abstract}  color="#6C3CE1" active={skill.mastery.pictorial>=1 && skill.mastery.abstract<1}/>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Modes grid */}
+          <div>
+            <div className="flex items-baseline justify-between mb-2 px-1">
+              <div className="font-display text-[20px]" style={{color:"#2a1a55"}}>How would you like to play?</div>
+              <div className="text-[13px] font-bold" style={{color:"#6b7280"}}>Pick a mode to land on this planet</div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {MODES.map(m => <ModeCard key={m.id} mode={m}/>)}
+            </div>
+          </div>
+
+          {/* Bottom row: prereqs + recent + unlocks */}
+          <div className="grid grid-cols-3 gap-4">
+            {/* Prereqs */}
+            <div className="bg-white rounded-2xl p-4 shadow-sm border-2 border-white">
+              <div className="text-[12px] font-bold uppercase tracking-wider" style={{color:"#9ca3af"}}>Built on</div>
+              <div className="mt-2 flex flex-col gap-2">
+                {skill.prereqs.map((p,i)=>(
+                  <div key={i} className="flex items-center gap-2">
+                    <span className="grid place-items-center rounded-full" style={{width:22,height:22, background:p.done?"#6BCB77":"#E5E7EB", color:"#fff", fontSize:13}}>
+                      {p.done?"✓":"·"}
+                    </span>
+                    <span className="font-bold text-[13px]" style={{color:"#2a1a55"}}>{p.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Recent */}
+            <div className="bg-white rounded-2xl p-4 shadow-sm border-2 border-white">
+              <div className="text-[12px] font-bold uppercase tracking-wider" style={{color:"#9ca3af"}}>Recent visits</div>
+              <div className="mt-2 flex flex-col gap-2">
+                {skill.recent.map((r,i)=>(
+                  <div key={i} className="flex items-start gap-2">
+                    <span className="rounded-full px-2 py-0.5 text-[11px] font-bold uppercase" style={{
+                      background: r.mode==="Practice"?"#E5EFFF":r.mode==="Explore"?"#F2EBFF":"#FFEDE3",
+                      color: r.mode==="Practice"?"#3B82F6":r.mode==="Explore"?"#6C3CE1":"#FF6B35"
+                    }}>{r.mode}</span>
+                    <div className="leading-tight">
+                      <div className="font-bold text-[13px]" style={{color:"#2a1a55"}}>{r.result}</div>
+                      <div className="text-[11px] font-bold" style={{color:"#9ca3af"}}>{r.date} · {r.time}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Unlocks */}
+            <div className="rounded-2xl p-4 border-2 border-dashed" style={{borderColor:"#FFD93D88", background:"#FFFBEA"}}>
+              <div className="text-[12px] font-bold uppercase tracking-wider flex items-center gap-1" style={{color:"#B07700"}}>
+                <span>★</span> Master this to unlock
+              </div>
+              <div className="mt-2 flex flex-col gap-2">
+                {skill.unlocks.map((u,i)=>(
+                  <div key={i} className="flex items-center gap-2">
+                    <span className="rounded-full" style={{width:10,height:10, background:"#9CA3AF"}}/>
+                    <span className="font-bold text-[13px]" style={{color:"#2a1a55"}}>{u.name}</span>
+                    <span className="ml-auto text-[10px] font-bold uppercase" style={{color:"#9ca3af"}}>L{u.level}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ----- Stage scaling ----- */
+function Stage(){
+  const [scale,setScale]=useState(1);
+  useEffect(()=>{
+    const calc=()=>{const w=window.innerWidth,h=window.innerHeight;setScale(Math.min(w/1280, h/820));};
+    calc();window.addEventListener("resize",calc);
+    return()=>window.removeEventListener("resize",calc);
+  },[]);
+  return (
+    <div className="w-full h-full grid place-items-center" style={{background:"#FAFAFA"}}>
+      <div style={{width:1280, height:820, transform:`scale(${scale})`, transformOrigin:"center", position:"relative", borderRadius:28, overflow:"hidden", boxShadow:"0 30px 80px rgba(75,34,168,.18)"}}>
+        <SkillDetail/>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<Stage/>);
+</script>
+</body>
+</html>

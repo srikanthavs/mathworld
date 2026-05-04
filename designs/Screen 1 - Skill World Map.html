@@ -1,0 +1,901 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>MathWorld — Skill Map</title>
+<meta name="viewport" content="width=1024, initial-scale=1" />
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/framer-motion@11.3.19/dist/framer-motion.js"></script>
+
+<style>
+  :root {
+    --primary: #6C3CE1;
+    --primary-deep: #4B22A8;
+    --secondary: #FF6B35;
+    --accent: #FFD93D;
+    --success: #6BCB77;
+    --error: #FF6B6B;
+    --bg: #FAFAFA;
+  }
+  html, body, #root { height: 100%; }
+  body {
+    margin: 0;
+    font-family: 'Nunito', system-ui, sans-serif;
+    font-size: 20px;
+    color: #1b1330;
+    background: #FAFAFA;
+    overflow: hidden;
+  }
+  .font-display { font-family: 'Fredoka One', 'Nunito', cursive; font-weight: 400; letter-spacing: 0.2px;}
+  /* Soft cosmic gradient — light, never dark on child screens */
+  .cosmic-bg {
+    background:
+      radial-gradient(1200px 800px at 50% 55%, #EFE7FF 0%, #F7F2FF 40%, #FAFAFA 75%),
+      radial-gradient(700px 500px at 12% 18%, #FFF6E0 0%, transparent 60%),
+      radial-gradient(700px 500px at 88% 14%, #FFE7DC 0%, transparent 60%),
+      radial-gradient(700px 500px at 88% 90%, #E4F7E8 0%, transparent 60%),
+      #FAFAFA;
+  }
+  /* Subtle dotted star field overlay */
+  .stars::before {
+    content: "";
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(1.5px 1.5px at 8% 22%, rgba(108,60,225,0.35) 50%, transparent 51%),
+      radial-gradient(1.2px 1.2px at 18% 78%, rgba(255,107,53,0.35) 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 28% 12%, rgba(255,217,61,0.55) 50%, transparent 51%),
+      radial-gradient(1px 1px at 42% 88%, rgba(108,60,225,0.4) 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 62% 24%, rgba(107,203,119,0.45) 50%, transparent 51%),
+      radial-gradient(1.2px 1.2px at 73% 72%, rgba(108,60,225,0.4) 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 86% 36%, rgba(255,217,61,0.6) 50%, transparent 51%),
+      radial-gradient(1px 1px at 92% 64%, rgba(255,107,53,0.45) 50%, transparent 51%),
+      radial-gradient(1.2px 1.2px at 5% 52%, rgba(108,60,225,0.4) 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 50% 50%, rgba(255,217,61,0.4) 50%, transparent 51%);
+    pointer-events: none;
+  }
+  .orbit-ring {
+    border-radius: 50%;
+    border: 2px dashed rgba(108,60,225,0.18);
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  .planet-shadow { filter: drop-shadow(0 8px 20px rgba(75,34,168,0.25)); }
+  .gold-ring {
+    box-shadow:
+      0 0 0 4px #FFD93D,
+      0 0 0 8px rgba(255,217,61,0.35),
+      0 12px 30px rgba(255,170,30,0.45);
+  }
+  /* Pulse for unlocked planets */
+  @keyframes softPulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(108,60,225,0.45), 0 10px 28px rgba(75,34,168,0.25); }
+    50%     { box-shadow: 0 0 0 14px rgba(108,60,225,0.0),  0 10px 28px rgba(75,34,168,0.25); }
+  }
+  .pulse-purple { animation: softPulse 2.4s ease-in-out infinite; }
+  @keyframes softPulseOrange {
+    0%,100% { box-shadow: 0 0 0 0 rgba(255,107,53,0.5), 0 10px 28px rgba(200,70,20,0.25); }
+    50%     { box-shadow: 0 0 0 14px rgba(255,107,53,0.0), 0 10px 28px rgba(200,70,20,0.25); }
+  }
+  .pulse-orange { animation: softPulseOrange 2.6s ease-in-out infinite; }
+  @keyframes drift { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+  .drift { animation: drift 4s ease-in-out infinite; }
+  @keyframes spinSlow { to { transform: rotate(360deg); } }
+  .spin-slow { animation: spinSlow 80s linear infinite; }
+  .spin-slower { animation: spinSlow 140s linear infinite; }
+  .spin-slowest { animation: spinSlow 220s linear infinite; }
+
+  /* Bounce micro-interaction for buttons */
+  .btn-bounce { transition: transform 120ms ease; }
+  .btn-bounce:active { transform: scale(0.94); }
+  .btn-bounce:hover { transform: translateY(-2px); }
+
+  /* Speech bubble tail */
+  .bubble {
+    position: relative;
+    background: white;
+    border: 3px solid #6C3CE1;
+    border-radius: 22px;
+    padding: 14px 18px;
+    box-shadow: 0 10px 28px rgba(75,34,168,0.18);
+  }
+  .bubble::after {
+    content: "";
+    position: absolute;
+    left: -16px; bottom: 22px;
+    width: 0; height: 0;
+    border: 12px solid transparent;
+    border-right-color: #6C3CE1;
+    border-left: 0;
+  }
+  .bubble::before {
+    content: "";
+    position: absolute;
+    left: -11px; bottom: 25px;
+    width: 0; height: 0;
+    border: 9px solid transparent;
+    border-right-color: white;
+    border-left: 0;
+    z-index: 1;
+  }
+
+  /* Wand sparkle */
+  @keyframes sparkle {
+    0%,100% { opacity:.4; transform: scale(.8) rotate(0deg);}
+    50% { opacity:1; transform: scale(1.1) rotate(20deg);}
+  }
+  .sparkle { animation: sparkle 1.6s ease-in-out infinite; transform-origin: center;}
+
+  /* Constellation lines */
+  .constellation { stroke-dasharray: 4 6; stroke: rgba(108,60,225,0.25); }
+
+  /* XP bar shimmer */
+  @keyframes shimmer { 0% {background-position: -200px 0;} 100% {background-position: 200px 0;}}
+  .shimmer {
+    background: linear-gradient(90deg, #FFD93D 0%, #FFE980 50%, #FFD93D 100%);
+    background-size: 200px 100%;
+    animation: shimmer 2.4s linear infinite;
+  }
+
+  /* No-select for kids who poke */
+  * { -webkit-tap-highlight-color: transparent; user-select: none; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="env,react">
+const { useState, useEffect, useMemo, useRef } = React;
+// Lightweight Motion shim — drop-in replacement for the bits of framer-motion we use here.
+// Maps <motion.x initial/animate/whileHover/whileTap/transition> to CSS transitions + transforms.
+// AnimatePresence just renders children (we use CSS for enter/exit feel).
+const MotionShim = (() => {
+  const make = (Tag) => React.forwardRef(function M(props, ref) {
+    const {
+      initial, animate, exit, transition, whileHover, whileTap, layoutId,
+      style, onMouseEnter, onMouseLeave, onMouseDown, onMouseUp, onTouchStart, onTouchEnd,
+      ...rest
+    } = props;
+    const [hover, setHover] = React.useState(false);
+    const [press, setPress] = React.useState(false);
+    const [mounted, setMounted] = React.useState(false);
+    React.useEffect(() => { const t = setTimeout(()=>setMounted(true), 10); return ()=>clearTimeout(t); }, []);
+    const target = mounted ? (animate || {}) : (initial || animate || {});
+    const active = press ? (whileTap || {}) : hover ? (whileHover || {}) : {};
+    const merged = { ...target, ...active };
+    const transforms = [];
+    if (merged.scale != null) transforms.push(`scale(${merged.scale})`);
+    if (merged.x != null) transforms.push(`translateX(${merged.x}px)`);
+    if (merged.y != null) transforms.push(`translateY(${merged.y}px)`);
+    if (merged.rotate != null) transforms.push(`rotate(${merged.rotate}deg)`);
+    const baseTransform = style && style.transform ? style.transform + " " : "";
+    const finalStyle = {
+      transition: "transform 280ms cubic-bezier(.34,1.56,.64,1), opacity 280ms ease",
+      ...style,
+      transform: (baseTransform + transforms.join(" ")).trim() || (style && style.transform) || undefined,
+      opacity: merged.opacity != null ? merged.opacity : (style ? style.opacity : undefined),
+    };
+    return React.createElement(Tag, {
+      ref, ...rest, style: finalStyle,
+      onMouseEnter: (e)=>{ setHover(true); onMouseEnter && onMouseEnter(e); },
+      onMouseLeave: (e)=>{ setHover(false); setPress(false); onMouseLeave && onMouseLeave(e); },
+      onMouseDown:  (e)=>{ setPress(true);  onMouseDown && onMouseDown(e); },
+      onMouseUp:    (e)=>{ setPress(false); onMouseUp && onMouseUp(e); },
+      onTouchStart: (e)=>{ setPress(true);  onTouchStart && onTouchStart(e); },
+      onTouchEnd:   (e)=>{ setPress(false); onTouchEnd && onTouchEnd(e); },
+    });
+  });
+  const handler = { get: (_, key) => make(key) };
+  return new Proxy({}, handler);
+})();
+const motion = MotionShim;
+const AnimatePresence = ({children}) => <>{children}</>;
+
+/* ---------------- Archie the Wizard ----------------
+   Drawn with simple SVG primitives (circles + cap + wand).
+   He has level + sparkles + a gentle bob.
+*/
+function Archie({ size = 180, level = 4, mood = "wave", className = "" }) {
+  // mood: 'wave' | 'celebrate' | 'think' | 'cheer'
+  return (
+    <div className={"relative drift " + className} style={{width:size, height:size*1.15}}>
+      <svg viewBox="0 0 200 230" width={size} height={size*1.15}>
+        {/* Stars around */}
+        <g className="sparkle" style={{transformOrigin:"30px 30px"}}>
+          <path d="M30 12 L33 26 L47 30 L33 34 L30 48 L27 34 L13 30 L27 26 Z" fill="#FFD93D"/>
+        </g>
+        <g className="sparkle" style={{transformOrigin:"170px 60px", animationDelay:"0.6s"}}>
+          <path d="M170 46 L172 56 L182 60 L172 64 L170 74 L168 64 L158 60 L168 56 Z" fill="#FF6B35"/>
+        </g>
+        {/* Robe */}
+        <path d="M55 175 Q100 130 145 175 L160 215 Q100 230 40 215 Z" fill="#6C3CE1"/>
+        <path d="M55 175 Q100 130 145 175 L160 215 Q100 230 40 215 Z" fill="url(#robeShine)" opacity=".25"/>
+        {/* Robe trim */}
+        <path d="M40 215 Q100 230 160 215" stroke="#FFD93D" strokeWidth="5" fill="none"/>
+        {/* Star on robe */}
+        <path d="M100 185 L104 196 L116 198 L107 206 L110 218 L100 212 L90 218 L93 206 L84 198 L96 196 Z" fill="#FFD93D"/>
+        {/* Neck */}
+        <rect x="88" y="118" width="24" height="20" rx="6" fill="#F2C99B"/>
+        {/* Face */}
+        <circle cx="100" cy="100" r="40" fill="#F8D6AB"/>
+        {/* Cheeks */}
+        <circle cx="78" cy="108" r="6" fill="#FF9AA2" opacity=".7"/>
+        <circle cx="122" cy="108" r="6" fill="#FF9AA2" opacity=".7"/>
+        {/* Eyes */}
+        <circle cx="86" cy="98" r="5" fill="#1b1330"/>
+        <circle cx="114" cy="98" r="5" fill="#1b1330"/>
+        <circle cx="87.5" cy="96.5" r="1.6" fill="white"/>
+        <circle cx="115.5" cy="96.5" r="1.6" fill="white"/>
+        {/* Smile */}
+        <path d="M86 116 Q100 128 114 116" stroke="#1b1330" strokeWidth="3" fill="none" strokeLinecap="round"/>
+        {/* Hair tuft */}
+        <path d="M70 78 Q85 60 100 72 Q115 60 130 78 Q120 70 100 74 Q80 70 70 78 Z" fill="#3a2a6e"/>
+        {/* Wizard hat */}
+        <path d="M55 78 Q100 -10 145 78 Z" fill="#6C3CE1"/>
+        <path d="M55 78 Q100 -10 145 78 Z" fill="url(#hatShine)" opacity=".25"/>
+        <ellipse cx="100" cy="78" rx="52" ry="9" fill="#4B22A8"/>
+        {/* Hat band */}
+        <rect x="58" y="74" width="84" height="10" rx="3" fill="#FFD93D"/>
+        <text x="100" y="83" textAnchor="middle" fontFamily="Fredoka One" fontSize="10" fill="#6C3CE1">★ LV {level}</text>
+        {/* Hat star */}
+        <path d="M100 28 L104 40 L116 42 L107 50 L110 62 L100 56 L90 62 L93 50 L84 42 L96 40 Z" fill="#FFD93D"/>
+        {/* Wand */}
+        <g transform={mood==='celebrate' ? 'rotate(-25 150 150)' : 'rotate(-10 150 150)'}>
+          <line x1="150" y1="170" x2="178" y2="118" stroke="#3a2a6e" strokeWidth="5" strokeLinecap="round"/>
+          <path d="M178 102 L182 116 L196 118 L183 124 L186 138 L176 130 L168 142 L170 128 L160 122 L173 118 Z" fill="#FFD93D"/>
+        </g>
+        {/* Hand */}
+        <circle cx="150" cy="170" r="8" fill="#F8D6AB"/>
+        <circle cx="58" cy="170" r="8" fill="#F8D6AB"/>
+        <defs>
+          <linearGradient id="hatShine" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0" stopColor="#fff"/>
+            <stop offset="1" stopColor="#fff" stopOpacity="0"/>
+          </linearGradient>
+          <linearGradient id="robeShine" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0" stopColor="#fff"/>
+            <stop offset="1" stopColor="#fff" stopOpacity="0"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  );
+}
+
+/* ---------------- Skill data ----------------
+   modes: which learning modes this planet appears in.
+     - explore: foundational concepts good for visual play (any skill is fair game,
+       but we curate ones with strong manipulatives)
+     - practice: skills with active scaffolding (anything not yet mastered)
+     - challenge: word-problem and multi-step skills (Level 2-3 mostly)
+     - speed: only mastered facts so the timed drill stays fair
+*/
+const SKILLS = [
+  // Level 1
+  { id: "num100",     name: "Number Sense",      sub:"1 → 100",         level: 1, status:"mastered",   color:"#6BCB77", icon:"123",   modes:["explore","speed"] },
+  { id: "place10",    name: "Place Value",       sub:"Tens & Ones",     level: 1, status:"mastered",   color:"#FFD93D", icon:"T·O",   modes:["explore","practice","speed"] },
+  { id: "addS",       name: "Addition",          sub:"Single digit",    level: 1, status:"mastered",   color:"#FF6B35", icon:"+",     modes:["explore","practice","speed"] },
+  { id: "addD",       name: "Addition",          sub:"Two digit",       level: 1, status:"unlocked",   color:"#FF6B35", icon:"+",     modes:["explore","practice","challenge"] },
+  { id: "subS",       name: "Subtraction",       sub:"Single digit",    level: 1, status:"unlocked",   color:"#6C3CE1", icon:"−",     modes:["explore","practice"] },
+  { id: "subD",       name: "Subtraction",       sub:"Two digit",       level: 1, status:"unlocked",   color:"#6C3CE1", icon:"−",     modes:["practice","challenge"] },
+  { id: "patt",       name: "Patterns",          sub:"Repeat & grow",   level: 1, status:"unlocked",   color:"#6BCB77", icon:"◆◇◆",   modes:["explore","practice"] },
+  { id: "shapes",     name: "Basic Shapes",      sub:"2D shapes",       level: 1, status:"unlocked",   color:"#FF6B35", icon:"△",     modes:["explore","practice"] },
+  { id: "measure",    name: "Measurement",       sub:"Length & weight", level: 1, status:"locked",     color:"#9CA3AF", icon:"📏",    modes:["explore","practice"] },
+  { id: "money",      name: "Money",             sub:"Indian ₹",        level: 1, status:"unlocked",   color:"#FFD93D", icon:"₹",     modes:["explore","practice","challenge"] },
+
+  // Level 2
+  { id: "num1000",    name: "Number Sense",      sub:"1 → 1000",        level: 2, status:"locked",     color:"#9CA3AF", icon:"999",   modes:["explore","practice"] },
+  { id: "place100",   name: "Place Value",       sub:"Hundreds",        level: 2, status:"locked",     color:"#9CA3AF", icon:"H·T·O", modes:["explore","practice"] },
+  { id: "addCarry",   name: "Add w/ Carrying",   sub:"Two digit",       level: 2, status:"locked",     color:"#9CA3AF", icon:"+¹",    modes:["practice","challenge"] },
+  { id: "subBorrow",  name: "Sub w/ Borrowing",  sub:"Two digit",       level: 2, status:"unlocked",   color:"#6C3CE1", icon:"−¹",    modes:["practice","challenge"] },
+  { id: "mulRep",     name: "Multiplication",    sub:"Repeated add",    level: 2, status:"locked",     color:"#9CA3AF", icon:"×",     modes:["explore","practice"] },
+  { id: "divShare",   name: "Division",          sub:"As sharing",      level: 2, status:"locked",     color:"#9CA3AF", icon:"÷",     modes:["explore","practice"] },
+  { id: "frac",       name: "Fractions",         sub:"½ and ¼",         level: 2, status:"locked",     color:"#9CA3AF", icon:"½",     modes:["explore","practice"] },
+  { id: "clock",      name: "Clock Reading",     sub:"Hours & half",    level: 2, status:"locked",     color:"#9CA3AF", icon:"◷",     modes:["explore","practice"] },
+
+  // Level 3
+  { id: "tables",     name: "Times Tables",      sub:"2 → 10",          level: 3, status:"locked",     color:"#9CA3AF", icon:"×ⁿ",    modes:["practice","speed"] },
+  { id: "wp1",        name: "Word Problems",     sub:"Single step",     level: 3, status:"locked",     color:"#9CA3AF", icon:"❝?❞",   modes:["challenge"] },
+  { id: "wp2",        name: "Word Problems",     sub:"Multi step",      level: 3, status:"locked",     color:"#9CA3AF", icon:"❝??❞",  modes:["challenge"] },
+  { id: "seq",        name: "Number Sequences",  sub:"Find next",       level: 3, status:"locked",     color:"#9CA3AF", icon:"→",     modes:["practice","challenge"] },
+  { id: "divFacts",   name: "Division Facts",    sub:"Early",           level: 3, status:"locked",     color:"#9CA3AF", icon:"÷",     modes:["practice","speed"] },
+];
+
+// Per-mode background tints (color zones from spec)
+const MODE_ZONE = {
+  explore:   { ring:"#6C3CE1", soft:"#F2EBFF", soft2:"#E8DCFF", label:"Explore Mode",   blurb:"Tap a planet to discover and play with manipulatives. No score, just curiosity." },
+  practice:  { ring:"#3B82F6", soft:"#E5EFFF", soft2:"#D6E5FF", label:"Practice Mode",  blurb:"Build skills layer by layer — concrete, pictorial, abstract." },
+  challenge: { ring:"#FF6B35", soft:"#FFEDE3", soft2:"#FFDFCC", label:"Challenge Mode", blurb:"Real-world puzzles that need deep thinking. Archie wears his thinking cap!" },
+  speed:     { ring:"#FFB300", soft:"#FFF5D6", soft2:"#FFE99B", label:"Speed Mode",     blurb:"Quick-fire facts. Pick 60 or 90 seconds and zoom!" },
+};
+
+// Larger, breathing radii. We'll pick 1 or 2 rings per mode dynamically based on count.
+const RING_SMALL = 230;
+const RING_LARGE = 360;
+
+/* ---------------- Planet ---------------- */
+function Planet({ skill, cx, cy, onTap, focus }) {
+  const size = skill.level === 1 ? 96 : skill.level === 2 ? 80 : 70;
+  const isLocked = skill.status === "locked";
+  const isMastered = skill.status === "mastered";
+  const isUnlocked = skill.status === "unlocked";
+
+  const pulseClass = isUnlocked
+    ? (skill.color === "#FF6B35" ? "pulse-orange" : "pulse-purple")
+    : "";
+
+  return (
+    <motion.button
+      onClick={() => onTap(skill)}
+      initial={{ scale: 0, opacity: 0 }}
+      animate={{ scale: focus ? 1.08 : 1, opacity: 1 }}
+      transition={{ type: "spring", stiffness: 220, damping: 18, delay: skill.level * 0.08 }}
+      whileHover={{ scale: 1.08 }}
+      whileTap={{ scale: 0.92 }}
+      className="absolute btn-bounce"
+      style={{
+        left: cx, top: cy, width: size, height: size,
+        transform: "translate(-50%, -50%)",
+        borderRadius: "50%",
+        background: isLocked
+          ? "radial-gradient(circle at 35% 30%, #d1d5db, #9ca3af 70%)"
+          : `radial-gradient(circle at 35% 30%, #ffffff, ${skill.color} 55%, ${shade(skill.color,-25)} 100%)`,
+        border: "none",
+        cursor: isLocked ? "not-allowed" : "pointer",
+        outline: "none",
+        opacity: isLocked ? 0.55 : 1,
+        padding: 0,
+      }}
+    >
+      <div
+        className={"relative w-full h-full rounded-full planet-shadow " + pulseClass}
+        style={{
+          boxShadow: isMastered ? undefined : (isUnlocked ? undefined : "0 6px 16px rgba(0,0,0,0.18)"),
+        }}
+      >
+        {/* surface highlight */}
+        <div className="absolute rounded-full" style={{
+          left:"18%", top:"15%", width:"32%", height:"22%",
+          background:"radial-gradient(ellipse at center, rgba(255,255,255,0.85), transparent 70%)",
+          filter:"blur(2px)"
+        }}/>
+        {/* surface texture spots */}
+        {!isLocked && <>
+          <div className="absolute rounded-full" style={{left:"55%",top:"30%",width:"14%",height:"14%",background:"rgba(0,0,0,0.10)"}}/>
+          <div className="absolute rounded-full" style={{left:"30%",top:"60%",width:"18%",height:"12%",background:"rgba(0,0,0,0.10)"}}/>
+          <div className="absolute rounded-full" style={{left:"65%",top:"62%",width:"10%",height:"10%",background:"rgba(0,0,0,0.10)"}}/>
+        </>}
+        {/* Mastered gold ring */}
+        {isMastered && <div className="absolute inset-0 rounded-full gold-ring"/>}
+        {/* Locked padlock */}
+        {isLocked && (
+          <div className="absolute inset-0 grid place-items-center">
+            <svg width="28" height="32" viewBox="0 0 28 32" fill="none">
+              <rect x="3" y="13" width="22" height="16" rx="3" fill="#4b5563"/>
+              <path d="M8 13 V9 a6 6 0 0 1 12 0 v4" stroke="#4b5563" strokeWidth="3" fill="none"/>
+              <circle cx="14" cy="21" r="2.5" fill="#FFD93D"/>
+            </svg>
+          </div>
+        )}
+        {/* Icon glyph */}
+        {!isLocked && (
+          <div className="absolute inset-0 grid place-items-center font-display"
+               style={{color:"white", fontSize: skill.level===1 ? 26 : 22, textShadow:"0 2px 4px rgba(0,0,0,0.25)"}}>
+            {skill.icon}
+          </div>
+        )}
+        {/* Mastered crown star */}
+        {isMastered && (
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+            <svg width="28" height="28" viewBox="0 0 24 24"><path d="M12 2 L14.6 9 L22 9.5 L16 14 L18.5 21 L12 17 L5.5 21 L8 14 L2 9.5 L9.4 9 Z" fill="#FFD93D" stroke="#fff" strokeWidth="1"/></svg>
+          </div>
+        )}
+      </div>
+      {/* Label below */}
+      <div className="absolute left-1/2 -translate-x-1/2 mt-2 whitespace-nowrap text-center" style={{top:"100%"}}>
+        <div className="font-display text-[15px]" style={{color:"#2a1a55"}}>{skill.name}</div>
+        <div className="text-[12px] font-semibold" style={{color: isLocked ? "#6b7280" : shade(skill.color,-30)}}>{skill.sub}</div>
+      </div>
+    </motion.button>
+  );
+}
+
+function shade(hex, percent) {
+  const n = parseInt(hex.replace("#",""),16);
+  const r = (n>>16)&255, g=(n>>8)&255, b=n&255;
+  const t = percent < 0 ? 0 : 255;
+  const p = Math.abs(percent)/100;
+  const nr = Math.round((t-r)*p)+r;
+  const ng = Math.round((t-g)*p)+g;
+  const nb = Math.round((t-b)*p)+b;
+  return "#"+((1<<24) + (nr<<16) + (ng<<8) + nb).toString(16).slice(1);
+}
+
+/* ---------------- Sun (MathWorld center) ---------------- */
+function Sun() {
+  return (
+    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+      <motion.div
+        animate={{ scale: [1, 1.04, 1] }}
+        transition={{ duration: 4, repeat: Infinity, ease:"easeInOut" }}
+        className="relative"
+        style={{ width: 180, height: 180 }}
+      >
+        <div className="absolute inset-0 rounded-full"
+             style={{
+               background: "radial-gradient(circle at 40% 35%, #FFF6C8, #FFD93D 55%, #FF6B35 100%)",
+               boxShadow: "0 0 60px rgba(255,217,61,0.55), 0 0 120px rgba(255,107,53,0.35)"
+             }}/>
+        {/* Sun rays */}
+        <div className="absolute inset-0 spin-slow">
+          {Array.from({length:12}).map((_,i)=>(
+            <div key={i} className="absolute left-1/2 top-1/2"
+                 style={{
+                   width:8,height:34, marginLeft:-4, marginTop:-110,
+                   background:"linear-gradient(to bottom, #FFD93D, transparent)",
+                   borderRadius:6,
+                   transform:`rotate(${i*30}deg) translateY(-10px)`,
+                   transformOrigin:"center 100px",
+                   opacity:.65
+                 }}/>
+          ))}
+        </div>
+        {/* Center label */}
+        <div className="absolute inset-0 grid place-items-center text-center">
+          <div>
+            <div className="font-display text-white" style={{fontSize:26, textShadow:"0 2px 6px rgba(180,80,0,0.5)"}}>Math</div>
+            <div className="font-display text-white" style={{fontSize:26, marginTop:-6, textShadow:"0 2px 6px rgba(180,80,0,0.5)"}}>World</div>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+/* ---------------- Header (kid HUD) ---------------- */
+function HUD({ onParent }) {
+  return (
+    <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-7 py-5">
+      {/* Greeting */}
+      <div className="flex items-center gap-3 bg-white/85 backdrop-blur rounded-full pl-3 pr-6 py-2 shadow-lg border-2 border-white">
+        <div className="w-12 h-12 rounded-full grid place-items-center font-display text-white text-xl"
+             style={{background:"linear-gradient(135deg,#6C3CE1,#FF6B35)"}}>A</div>
+        <div className="leading-tight">
+          <div className="text-[13px] font-bold uppercase tracking-wide" style={{color:"#6b7280"}}>Welcome back</div>
+          <div className="font-display text-[22px]" style={{color:"#2a1a55"}}>Advaith</div>
+        </div>
+      </div>
+
+      {/* XP / Level / Streak */}
+      <div className="flex items-center gap-3">
+        {/* Streak */}
+        <div className="bg-white/85 backdrop-blur rounded-full px-4 py-2 shadow-lg border-2 border-white flex items-center gap-2">
+          <span style={{fontSize:24}}>🔥</span>
+          <div className="leading-tight">
+            <div className="font-display text-[20px]" style={{color:"#FF6B35"}}>7</div>
+            <div className="text-[11px] font-bold uppercase" style={{color:"#6b7280"}}>day streak</div>
+          </div>
+        </div>
+        {/* Stars */}
+        <div className="bg-white/85 backdrop-blur rounded-full px-4 py-2 shadow-lg border-2 border-white flex items-center gap-2">
+          <svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 2 L14.6 9 L22 9.5 L16 14 L18.5 21 L12 17 L5.5 21 L8 14 L2 9.5 L9.4 9 Z" fill="#FFD93D" stroke="#FF6B35" strokeWidth="1"/></svg>
+          <div className="leading-tight">
+            <div className="font-display text-[20px]" style={{color:"#FFB300"}}>248</div>
+            <div className="text-[11px] font-bold uppercase" style={{color:"#6b7280"}}>stars</div>
+          </div>
+        </div>
+        {/* Archie level + XP bar */}
+        <div className="bg-white/85 backdrop-blur rounded-2xl px-4 py-2 shadow-lg border-2 border-white flex items-center gap-3 min-w-[260px]">
+          <div className="w-12 h-12 rounded-full grid place-items-center"
+               style={{background:"linear-gradient(135deg,#6C3CE1,#4B22A8)"}}>
+            <span className="font-display text-white text-[18px]">L4</span>
+          </div>
+          <div className="flex-1 leading-tight">
+            <div className="flex items-baseline justify-between">
+              <span className="font-display text-[14px]" style={{color:"#2a1a55"}}>Archie</span>
+              <span className="text-[12px] font-bold" style={{color:"#6b7280"}}>320 / 500 XP</span>
+            </div>
+            <div className="h-3 rounded-full mt-1 overflow-hidden" style={{background:"#EFE7FF"}}>
+              <div className="h-full rounded-full shimmer" style={{width:"64%"}}/>
+            </div>
+            <div className="text-[11px] font-bold mt-0.5" style={{color:"#6C3CE1"}}>180 XP to level 5 ✨</div>
+          </div>
+        </div>
+        {/* Parent lock — discreet */}
+        <button onClick={onParent} aria-label="Parent area"
+                className="btn-bounce w-12 h-12 rounded-full grid place-items-center bg-white/70 backdrop-blur border-2 border-white shadow"
+                title="Parent dashboard">
+          <svg width="20" height="22" viewBox="0 0 24 28" fill="none">
+            <rect x="3" y="11" width="18" height="14" rx="3" fill="#9CA3AF"/>
+            <path d="M7 11 V7 a5 5 0 0 1 10 0 v4" stroke="#9CA3AF" strokeWidth="2.5" fill="none"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- Mode tab pills (bottom) ---------------- */
+function ModeBar({ mode, setMode }) {
+  const modes = [
+    { id:"explore",  label:"Explore",   tag:"Discover",        color:"#6C3CE1", icon:"🔮" },
+    { id:"practice", label:"Practice",  tag:"Build it up",     color:"#3B82F6", icon:"🧩" },
+    { id:"challenge",label:"Challenge", tag:"Big thinking",    color:"#FF6B35", icon:"🎩" },
+    { id:"speed",    label:"Speed",     tag:"Quick facts",     color:"#FFB300", icon:"⚡" },
+  ];
+  return (
+    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
+      <div className="bg-white rounded-[28px] shadow-2xl border-4 border-white px-3 py-3 flex gap-2"
+           style={{boxShadow:"0 24px 60px rgba(75,34,168,0.25)"}}>
+        {modes.map(m => {
+          const active = mode === m.id;
+          return (
+            <button key={m.id}
+              onClick={()=>setMode(m.id)}
+              className="btn-bounce relative px-5 py-3 rounded-2xl flex items-center gap-3 transition-all"
+              style={{
+                background: active ? m.color : "#F4F1FB",
+                color: active ? "white" : "#2a1a55",
+                minHeight: 60, minWidth: 168,
+                boxShadow: active ? `0 8px 22px ${m.color}66` : "none",
+              }}>
+              <span style={{fontSize:24}}>{m.icon}</span>
+              <span className="leading-tight text-left">
+                <span className="block font-display text-[18px]">{m.label}</span>
+                <span className="block text-[12px] font-bold opacity-90">{m.tag}</span>
+              </span>
+              {active && (
+                <motion.span layoutId="modePip" className="absolute -top-2 -right-2 rounded-full bg-white grid place-items-center"
+                  style={{width:24,height:24, boxShadow:`0 4px 10px ${m.color}99`}}>
+                  <span style={{color:m.color, fontSize:14}}>★</span>
+                </motion.span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      <div className="text-center mt-3">
+        <span className="bg-white/80 rounded-full px-4 py-1 text-[13px] font-bold" style={{color:"#6b7280"}}>
+          Tap a planet to begin in <b style={{color:"#2a1a55"}}>{
+            mode==="explore"?"Explore":mode==="practice"?"Practice":mode==="challenge"?"Challenge":"Speed"
+          }</b> mode
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- Skill detail popup (Screen 2 stub) ---------------- */
+function SkillPopup({ skill, onClose, mode }) {
+  if (!skill) return null;
+  const locked = skill.status === "locked";
+  const mastered = skill.status === "mastered";
+  return (
+    <AnimatePresence>
+      <motion.div
+        key="overlay"
+        initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
+        className="absolute inset-0 z-40 grid place-items-center"
+        style={{background:"rgba(75,34,168,0.35)", backdropFilter:"blur(6px)"}}
+        onClick={onClose}>
+        <motion.div
+          initial={{scale:.85, y:30, opacity:0}} animate={{scale:1, y:0, opacity:1}} exit={{scale:.9, opacity:0}}
+          transition={{type:"spring", stiffness:240, damping:22}}
+          onClick={e=>e.stopPropagation()}
+          className="bg-white rounded-[32px] shadow-2xl p-7 max-w-[520px] w-[90%] relative border-4 border-white">
+          <button onClick={onClose} aria-label="Close"
+            className="btn-bounce absolute -top-4 -right-4 w-12 h-12 rounded-full grid place-items-center text-white shadow-lg"
+            style={{background:"#6C3CE1"}}>✕</button>
+          {/* Header */}
+          <div className="flex items-center gap-4">
+            <div className="w-20 h-20 rounded-full"
+                 style={{
+                   background: locked ? "radial-gradient(circle at 35% 30%, #d1d5db, #9ca3af)"
+                                      : `radial-gradient(circle at 35% 30%, #ffffff, ${skill.color} 55%, ${shade(skill.color,-25)})`,
+                   boxShadow: mastered ? "0 0 0 4px #FFD93D, 0 12px 30px rgba(255,170,30,0.35)" : "0 12px 30px rgba(75,34,168,0.2)"
+                 }}>
+              <div className="w-full h-full grid place-items-center font-display text-white text-2xl">{locked ? "🔒" : skill.icon}</div>
+            </div>
+            <div>
+              <div className="text-[12px] font-bold uppercase tracking-wider" style={{color:"#9ca3af"}}>Level {skill.level} · Planet</div>
+              <div className="font-display text-[28px] leading-tight" style={{color:"#2a1a55"}}>{skill.name}</div>
+              <div className="font-bold text-[16px]" style={{color: shade(skill.color,-25)}}>{skill.sub}</div>
+            </div>
+          </div>
+
+          {/* Progress */}
+          <div className="mt-5 grid grid-cols-3 gap-2">
+            {["Concrete","Pictorial","Abstract"].map((label,i)=>{
+              const filled = mastered ? 1 : (skill.status==="unlocked" ? (i===0?1:i===1?0.6:0.2) : 0);
+              return (
+                <div key={label} className="bg-[#F4F1FB] rounded-2xl p-3 text-center">
+                  <div className="text-[12px] font-bold" style={{color:"#6b7280"}}>{label}</div>
+                  <div className="h-2 rounded-full mt-2 bg-white overflow-hidden">
+                    <div className="h-full rounded-full" style={{width:`${filled*100}%`, background:"#6C3CE1"}}/>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Tagline */}
+          <div className="mt-5 bubble" style={{borderColor:skill.color}}>
+            <div className="font-bold" style={{color:"#2a1a55"}}>
+              {locked
+                ? "Master a few more planets and I'll teleport us here together! ✨"
+                : mastered
+                  ? "You're a master of this planet, Advaith! Want to fly back and explore more?"
+                  : "Ready to land on this planet? Pick a way to play!"}
+            </div>
+          </div>
+
+          {/* Mode CTAs (the four learning modes) */}
+          {!locked && (
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              {[
+                {id:"explore",  label:"Explore",   color:"#6C3CE1", icon:"🔮", desc:"Play & discover"},
+                {id:"practice", label:"Practice",  color:"#3B82F6", icon:"🧩", desc:"Step by step"},
+                {id:"challenge",label:"Challenge", color:"#FF6B35", icon:"🎩", desc:"Real puzzles"},
+                {id:"speed",    label:"Speed",     color:"#FFB300", icon:"⚡", desc:"60s drill"},
+              ].map(m => (
+                <button key={m.id}
+                  className="btn-bounce rounded-2xl p-3 text-left text-white flex items-center gap-3"
+                  style={{background:m.color, minHeight:64, boxShadow:`0 8px 18px ${m.color}55`}}>
+                  <span style={{fontSize:26}}>{m.icon}</span>
+                  <span className="leading-tight">
+                    <span className="block font-display text-[18px]">{m.label}</span>
+                    <span className="block text-[12px] font-bold opacity-90">{m.desc}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+          {locked && (
+            <button onClick={onClose} className="btn-bounce mt-5 w-full rounded-2xl py-3 text-white font-display text-[18px]"
+                    style={{background:"#9CA3AF", minHeight:60}}>
+              Back to the map
+            </button>
+          )}
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+/* ---------------- Parent gate sheet ---------------- */
+function ParentGate({ open, onClose }) {
+  const [pin, setPin] = useState("");
+  if (!open) return null;
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
+        className="absolute inset-0 z-50 grid place-items-center"
+        style={{background:"rgba(20,12,50,0.45)", backdropFilter:"blur(4px)"}}
+        onClick={onClose}>
+        <motion.div onClick={e=>e.stopPropagation()}
+          initial={{y:40, opacity:0}} animate={{y:0, opacity:1}} exit={{y:20, opacity:0}}
+          className="bg-white rounded-[28px] p-7 w-[420px] shadow-2xl border-4 border-white">
+          <div className="font-display text-[24px]" style={{color:"#2a1a55"}}>Grown-up Zone</div>
+          <div className="text-[15px] mt-1" style={{color:"#6b7280"}}>Enter the 4-digit parent PIN to view Advaith's progress.</div>
+          <div className="grid grid-cols-4 gap-2 mt-5">
+            {[0,1,2,3].map(i=>(
+              <div key={i} className="h-16 rounded-2xl grid place-items-center font-display text-2xl"
+                   style={{background:"#F4F1FB", color:"#6C3CE1"}}>
+                {pin[i] ? "•" : ""}
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-3 gap-2 mt-4">
+            {["1","2","3","4","5","6","7","8","9","","0","⌫"].map((k,i)=>(
+              <button key={i}
+                disabled={k===""}
+                onClick={()=>{
+                  if (k==="⌫") setPin(p=>p.slice(0,-1));
+                  else if (k && pin.length<4) setPin(p=>p+k);
+                }}
+                className="btn-bounce rounded-2xl py-3 font-display text-[20px]"
+                style={{
+                  background: k==="" ? "transparent" : "#FAFAFA",
+                  color:"#2a1a55",
+                  visibility: k==="" ? "hidden":"visible",
+                  minHeight:60
+                }}>
+                {k}
+              </button>
+            ))}
+          </div>
+          <button onClick={onClose} className="btn-bounce mt-3 w-full rounded-2xl py-3 font-display text-[18px]"
+            style={{background:"#EFE7FF", color:"#6C3CE1", minHeight:48}}>
+            Cancel
+          </button>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+/* ---------------- The whole map ---------------- */
+function SkillWorldMap() {
+  const [selected, setSelected] = useState(null);
+  const [mode, setMode] = useState("explore");
+  const [parentOpen, setParentOpen] = useState(false);
+
+  const center = { x: 600, y: 400 };
+  const zone = MODE_ZONE[mode];
+
+  // Filter skills relevant to the current mode, then lay out cleanly:
+  //   - <= 8 planets:  one ring at RING_SMALL, evenly spaced
+  //   - >= 9 planets:  two rings (Level 1 inner, Level 2/3 outer)
+  const positions = useMemo(()=>{
+    const visible = SKILLS.filter(s => s.modes.includes(mode));
+    let layout;
+    if (visible.length <= 8) {
+      // Single ring, even angles, start at top
+      const N = visible.length;
+      layout = visible.map((s, i) => {
+        const angle = -90 + (360/N)*i;
+        const rad = angle * Math.PI/180;
+        return { ...s, x: center.x + RING_SMALL*Math.cos(rad), y: center.y + RING_SMALL*Math.sin(rad), ringR: RING_SMALL };
+      });
+    } else {
+      const inner = visible.filter(s => s.level === 1);
+      const outer = visible.filter(s => s.level !== 1);
+      const place = (arr, R) => {
+        const N = arr.length;
+        return arr.map((s, i) => {
+          const angle = -90 + (360/N)*i + (R===RING_LARGE ? 22 : 0); // offset outer slightly
+          const rad = angle * Math.PI/180;
+          return { ...s, x: center.x + R*Math.cos(rad), y: center.y + R*Math.sin(rad), ringR: R };
+        });
+      };
+      layout = [...place(inner, RING_SMALL), ...place(outer, RING_LARGE)];
+    }
+    return layout;
+  }, [mode]);
+
+  // Counts per status for the legend
+  const counts = useMemo(()=>{
+    const list = SKILLS.filter(s => s.modes.includes(mode));
+    return {
+      total: list.length,
+      mastered: list.filter(s=>s.status==="mastered").length,
+      unlocked: list.filter(s=>s.status==="unlocked").length,
+      locked:   list.filter(s=>s.status==="locked").length,
+    };
+  }, [mode]);
+
+  // Background tints react to mode for "color zone" feel
+  const bgStyle = {
+    background: `
+      radial-gradient(1200px 800px at 50% 55%, ${zone.soft} 0%, ${zone.soft2} 35%, #FAFAFA 80%),
+      radial-gradient(700px 500px at 12% 18%, #FFF6E0 0%, transparent 60%),
+      radial-gradient(700px 500px at 88% 90%, #E4F7E8 0%, transparent 60%),
+      #FAFAFA`
+  };
+
+  const showOuter = positions.some(p => p.ringR === RING_LARGE);
+
+  return (
+    <div className="relative w-full h-full overflow-hidden" style={bgStyle}>
+      <div className="stars absolute inset-0"/>
+      {/* HUD */}
+      <HUD onParent={()=>setParentOpen(true)}/>
+
+      {/* Mode banner (top-left, under HUD) — replaces level legend with mode context */}
+      <div className="absolute left-7 z-20" style={{top:108}}>
+        <div className="bg-white/90 backdrop-blur rounded-2xl px-4 py-3 shadow-lg border-2 border-white max-w-[280px]">
+          <div className="flex items-center gap-2">
+            <span className="inline-block rounded-full" style={{width:14, height:14, background:zone.ring, boxShadow:`0 0 0 4px ${zone.ring}33`}}/>
+            <div className="font-display text-[18px]" style={{color:"#2a1a55"}}>{zone.label}</div>
+          </div>
+          <div className="text-[13px] font-semibold mt-1" style={{color:"#6b7280", lineHeight:1.35}}>{zone.blurb}</div>
+          <div className="mt-3 pt-3 border-t border-[#EFE7FF] flex flex-col gap-1.5 text-[12px] font-bold">
+            <Tag dot="#FFD93D" label={`${counts.mastered} mastered`}/>
+            <Tag dot={zone.ring} label={`${counts.unlocked} ready to play`}/>
+            <Tag dot="#9CA3AF" label={`${counts.locked} locked`}/>
+          </div>
+        </div>
+      </div>
+
+      {/* Scene */}
+      <div className="absolute inset-0">
+        {/* Orbital ring(s) — only the rings actually used */}
+        <div className="orbit-ring" style={{width:RING_SMALL*2, height:RING_SMALL*2, left:center.x, top:center.y, borderColor:`${zone.ring}30`}}/>
+        {showOuter && (
+          <div className="orbit-ring" style={{width:RING_LARGE*2, height:RING_LARGE*2, left:center.x, top:center.y, borderColor:`${zone.ring}1f`}}/>
+        )}
+
+        {/* Centered scene container */}
+        <div className="absolute" style={{ left: 0, top: 0, width: 1200, height: 800 }}>
+          <Sun mode={mode}/>
+          {positions.map(s=>(
+            <Planet key={mode+"-"+s.id} skill={s} cx={s.x} cy={s.y}
+                    onTap={(sk)=>setSelected(sk)} focus={false}/>
+          ))}
+        </div>
+      </div>
+
+      {/* Archie + speech bubble (bottom-left) */}
+      <div className="absolute z-20 flex items-end gap-4" style={{left:24, bottom:150}}>
+        <Archie size={160} level={4} />
+        <div className="bubble max-w-[290px] mb-6" style={{borderColor:zone.ring}}>
+          <div className="font-display text-[18px]" style={{color:"#2a1a55"}}>Hi Advaith! ✨</div>
+          <div className="font-bold text-[15px]" style={{color:"#3a2a6e"}}>
+            {mode === "explore"  && <>Let's wander and discover something new today.</>}
+            {mode === "practice" && <>Pick a planet and we'll build it up step by step!</>}
+            {mode === "challenge"&& <>Time for some big-thinking puzzles. Ready, captain?</>}
+            {mode === "speed"    && <>Quick-fire round! Pick a planet you've already mastered.</>}
+          </div>
+        </div>
+      </div>
+
+      {/* Mode bar (bottom center) */}
+      <ModeBar mode={mode} setMode={setMode}/>
+
+      {/* Popup */}
+      {selected && <SkillPopup skill={selected} mode={mode} onClose={()=>setSelected(null)}/>}
+
+      {/* Parent gate */}
+      <ParentGate open={parentOpen} onClose={()=>setParentOpen(false)}/>
+    </div>
+  );
+}
+
+function Legend({color, label, count}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="inline-block rounded-full" style={{width:12,height:12, background:color, boxShadow:`0 0 0 3px ${color}33`}}/>
+      <span className="font-bold text-[14px]" style={{color:"#2a1a55"}}>{label}</span>
+      <span className="ml-auto text-[12px] font-bold" style={{color:"#6b7280"}}>{count}</span>
+    </div>
+  );
+}
+function Tag({dot, label}) {
+  return (
+    <span className="inline-flex items-center gap-1.5 bg-white/80 rounded-full px-2.5 py-1">
+      <span className="inline-block rounded-full" style={{width:8, height:8, background:dot}}/>
+      <span style={{color:"#2a1a55"}}>{label}</span>
+    </span>
+  );
+}
+
+/* Scaled-to-viewport stage so the 1200x800 design fits any screen */
+function Stage() {
+  const ref = useRef(null);
+  const [scale, setScale] = useState(1);
+  useEffect(()=>{
+    const calc = () => {
+      const w = window.innerWidth, h = window.innerHeight;
+      const s = Math.min(w/1200, h/800);
+      setScale(s);
+    };
+    calc();
+    window.addEventListener("resize", calc);
+    return ()=> window.removeEventListener("resize", calc);
+  },[]);
+  return (
+    <div className="w-full h-full grid place-items-center" style={{background:"#FAFAFA"}}>
+      <div ref={ref} style={{
+        width:1200, height:800, transform:`scale(${scale})`, transformOrigin:"center center",
+        position:"relative", borderRadius: 28, overflow:"hidden", boxShadow:"0 30px 80px rgba(75,34,168,0.18)"
+      }}>
+        <SkillWorldMap />
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<Stage />);
+</script>
+</body>
+</html>

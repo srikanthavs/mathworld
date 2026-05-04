@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>MathWorld — Parent Dashboard</title>
+<meta name="viewport" content="width=1280, initial-scale=1" />
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  :root{
+    --primary:#6C3CE1;--primary-deep:#4B22A8;--secondary:#FF6B35;--accent:#FFD93D;
+    --success:#6BCB77;--error:#FF6B6B;--bg:#FAFAFA;--ink:#1b1330;--ink2:#2a1a55;
+  }
+  html,body,#root{height:100%}
+  body{margin:0;font-family:'Nunito',system-ui,sans-serif;font-size:16px;color:var(--ink);background:#FAFAFA;}
+  .font-display{font-family:'Fredoka One',cursive;font-weight:400;letter-spacing:.2px}
+  *{-webkit-tap-highlight-color:transparent}
+  .btn-bounce{transition:transform 140ms ease, box-shadow 140ms ease}
+  .btn-bounce:hover{transform:translateY(-1px)}
+  .btn-bounce:active{transform:scale(.97)}
+  .card{background:#fff;border-radius:20px;box-shadow:0 6px 22px rgba(75,34,168,.06);border:1px solid #F1ECFA}
+  @keyframes shimmer{0%{background-position:-200px 0}100%{background-position:200px 0}}
+  .shimmer{background:linear-gradient(90deg,#FFD93D 0%,#FFE980 50%,#FFD93D 100%);background-size:200px 100%;animation:shimmer 2.4s linear infinite}
+  .pin-dot{transition:transform 200ms ease, background 200ms ease}
+  .scrollbar-soft::-webkit-scrollbar{width:8px}
+  .scrollbar-soft::-webkit-scrollbar-thumb{background:#E5DCFA;border-radius:8px}
+  .scrollbar-soft::-webkit-scrollbar-track{background:transparent}
+  .grad-purple{background:linear-gradient(180deg,#6C3CE1,#4B22A8)}
+  .grad-purple-soft{background:linear-gradient(180deg,#A98AF7,#6C3CE1)}
+  .archie-mini{filter:drop-shadow(0 4px 10px rgba(75,34,168,.25))}
+  .pin-bg{
+    background:
+      radial-gradient(900px 600px at 80% -10%, #F2EBFF 0%, transparent 60%),
+      radial-gradient(700px 500px at -10% 110%, #FFEDE3 0%, transparent 60%),
+      #FAFAFA;
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="env,react">
+const { useState, useMemo, useEffect } = React;
+
+/* ---------- Tiny Archie icon (static for parent header) ---------- */
+function ArchieIcon({size=44, level=3}){
+  return (
+    <div className="archie-mini" style={{width:size, height:size}}>
+      <svg viewBox="0 0 200 200" width={size} height={size}>
+        {/* face */}
+        <circle cx="100" cy="115" r="40" fill="#F8D6AB"/>
+        <circle cx="86" cy="113" r="4.5" fill="#1b1330"/>
+        <circle cx="114" cy="113" r="4.5" fill="#1b1330"/>
+        <path d="M86 130 Q100 140 114 130" stroke="#1b1330" strokeWidth="3" fill="none" strokeLinecap="round"/>
+        <circle cx="78" cy="123" r="5" fill="#FF9AA2" opacity=".7"/>
+        <circle cx="122" cy="123" r="5" fill="#FF9AA2" opacity=".7"/>
+        {/* hat */}
+        <path d="M60 90 Q100 10 140 90 Z" fill="#6C3CE1"/>
+        <ellipse cx="100" cy="90" rx="48" ry="8" fill="#4B22A8"/>
+        <rect x="62" y="86" width="76" height="10" rx="3" fill="#FFD93D"/>
+        <text x="100" y="95" textAnchor="middle" fontFamily="Fredoka One" fontSize="10" fill="#6C3CE1">★ LV {level}</text>
+        <path d="M100 38 L103 50 L115 52 L106 60 L109 72 L100 66 L91 72 L94 60 L85 52 L97 50 Z" fill="#FFD93D"/>
+        {/* robe peek */}
+        <path d="M65 175 Q100 150 135 175 L140 195 Q100 205 60 195 Z" fill="#6C3CE1"/>
+        <path d="M60 195 Q100 205 140 195" stroke="#FFD93D" strokeWidth="3" fill="none"/>
+      </svg>
+    </div>
+  );
+}
+
+/* ---------- Sample data ---------- */
+const CHILD = {
+  name:"Advaith",
+  level:3, xp:340, xpMax:500,
+  stars:127, streak:5,
+  lastSession:{ date:"Today", duration:18 },
+};
+
+const SKILLS = [
+  // Level 1
+  { id:"num100",  name:"Number Sense 1–100",   level:1, status:"mastered" },
+  { id:"place10", name:"Place Value (T·O)",    level:1, status:"in",   accuracy:0.72 },
+  { id:"addS",    name:"Addition Single",      level:1, status:"mastered" },
+  { id:"addD",    name:"Addition Two-Digit",   level:1, status:"in",   accuracy:0.58 },
+  { id:"subS",    name:"Subtraction Single",   level:1, status:"mastered" },
+  { id:"subD",    name:"Subtraction Two-Digit",level:1, status:"in",   accuracy:0.45 },
+  { id:"patt",    name:"Patterns",             level:1, status:"mastered" },
+  { id:"shapes",  name:"Basic Shapes",         level:1, status:"mastered" },
+  { id:"measure", name:"Measurement",          level:1, status:"locked" },
+  { id:"money",   name:"Money (Indian ₹)",     level:1, status:"locked" },
+  // Level 2
+  { id:"num1000", name:"Number Sense 1–1000",  level:2, status:"locked" },
+  { id:"place100",name:"Place Value (Hundreds)",level:2, status:"locked" },
+  { id:"addCarry",name:"Addition w/ Carrying", level:2, status:"locked" },
+  { id:"subBor",  name:"Subtraction w/ Borrowing", level:2, status:"locked" },
+  { id:"mulRep",  name:"Multiplication (Repeated Add)", level:2, status:"locked" },
+  { id:"divShare",name:"Division (Sharing)",   level:2, status:"locked" },
+  { id:"frac",    name:"Fractions ½ ¼",        level:2, status:"locked" },
+  { id:"clock",   name:"Clock Reading",        level:2, status:"locked" },
+  // Level 3
+  { id:"tables",  name:"Times Tables 2–10",    level:3, status:"locked" },
+  { id:"wp1",     name:"Word Problems (1-step)",level:3, status:"locked" },
+  { id:"wp2",     name:"Word Problems (multi)",level:3, status:"locked" },
+  { id:"seq",     name:"Number Sequences",     level:3, status:"locked" },
+  { id:"divFacts",name:"Early Division Facts", level:3, status:"locked" },
+];
+
+const WEAK = [
+  { skill:"Addition Two-Digit",   error:"calculation", attempts:12,
+    advice:"Calculation slips when adding tens. Try counting blocks aloud together: 23 + 14 → group the tens, then the ones." },
+  { skill:"Subtraction Two-Digit",error:"conceptual",  attempts:8,
+    advice:"Advaith is making conceptual errors. Try a number line at home — physically hop backwards to subtract." },
+  { skill:"Place Value (T·O)",    error:"careless",    attempts:6,
+    advice:"Knows it but rushes. Ask him to slow down and say the place name (\"3 tens, 4 ones\") before answering." },
+];
+
+const SESSIONS = [
+  { date:"Today",       skill:"Addition Two-Digit",   mode:"Practice", acc:0.64, mins:18 },
+  { date:"Yesterday",   skill:"Place Value (T·O)",    mode:"Explore",  acc:null, mins:12 },
+  { date:"2 days ago",  skill:"Subtraction Two-Digit",mode:"Practice", acc:0.45, mins:20 },
+  { date:"3 days ago",  skill:"Addition Single",      mode:"Speed",    acc:0.92, mins:8  },
+  { date:"4 days ago",  skill:"Subtraction Single",   mode:"Challenge",acc:0.80, mins:15 },
+  { date:"5 days ago",  skill:"Number Sense 1–100",   mode:"Practice", acc:0.95, mins:22 },
+  { date:"6 days ago",  skill:"Basic Shapes",         mode:"Explore",  acc:null, mins:10 },
+];
+
+const WEEK = [
+  { day:"Mon", mins:22 },
+  { day:"Tue", mins:0  },
+  { day:"Wed", mins:35 },
+  { day:"Thu", mins:20 },
+  { day:"Fri", mins:15 },
+  { day:"Sat", mins:0  },
+  { day:"Sun", mins:18 },
+];
+
+const ERROR_STYLES = {
+  conceptual:  { bg:"#F2EBFF", color:"#6C3CE1", label:"Conceptual" },
+  calculation: { bg:"#E5EFFF", color:"#3B82F6", label:"Calculation" },
+  careless:    { bg:"#FFF3D6", color:"#B07700", label:"Careless" },
+};
+
+const MODE_STYLES = {
+  Explore:   { bg:"#F2EBFF", color:"#6C3CE1" },
+  Practice:  { bg:"#E5EFFF", color:"#3B82F6" },
+  Challenge: { bg:"#FFEDE3", color:"#FF6B35" },
+  Speed:     { bg:"#FFF5D6", color:"#B07700" },
+};
+
+/* ---------- PIN screen ---------- */
+function PinScreen({ onSuccess }){
+  const [pin, setPin] = useState("");
+  const [err, setErr] = useState(false);
+  const press = (k) => {
+    if (k==="⌫") return setPin(p=>p.slice(0,-1));
+    if (pin.length>=4) return;
+    const next = pin + k;
+    setErr(false);
+    setPin(next);
+    if (next.length===4){
+      setTimeout(()=>{
+        if (next==="1234") onSuccess();
+        else { setErr(true); setTimeout(()=>setPin(""),500); }
+      }, 180);
+    }
+  };
+  return (
+    <div className="w-full h-full pin-bg grid place-items-center">
+      <div className="w-[420px] card p-7">
+        <div className="flex items-center gap-3">
+          <ArchieIcon size={48} level={3}/>
+          <div className="leading-tight">
+            <div className="text-[12px] font-bold uppercase tracking-wider" style={{color:"#9ca3af"}}>MathWorld</div>
+            <div className="font-display text-[24px]" style={{color:"#2a1a55"}}>Grown-up Zone</div>
+          </div>
+        </div>
+        <div className="text-[14px] mt-3" style={{color:"#6b7280", lineHeight:1.5}}>
+          Enter the 4-digit parent PIN to view Advaith's progress, weak areas, and session history.
+          <span className="ml-1 text-[12px] font-bold" style={{color:"#6C3CE1"}}>Hint: 1234</span>
+        </div>
+        <div className="grid grid-cols-4 gap-2.5 mt-5">
+          {[0,1,2,3].map(i=>(
+            <div key={i} className="h-16 rounded-2xl grid place-items-center pin-dot"
+                 style={{
+                   background: err ? "#FFE4E6" : pin[i]?"#EFE7FF":"#F4F1FB",
+                   transform: pin[i] && !err ? "translateY(-2px)" : "none",
+                   border: err ? "2px solid #FF6B6B":"2px solid transparent"
+                 }}>
+              <span className="font-display text-2xl" style={{color: err?"#FF6B6B":"#6C3CE1"}}>
+                {pin[i] ? "•" : ""}
+              </span>
+            </div>
+          ))}
+        </div>
+        {err && <div className="text-center mt-2 font-bold text-[13px]" style={{color:"#FF6B6B"}}>That's not quite right. Try again.</div>}
+        <div className="grid grid-cols-3 gap-2 mt-5">
+          {["1","2","3","4","5","6","7","8","9","","0","⌫"].map((k,i)=>(
+            <button key={i}
+              disabled={k===""}
+              onClick={()=>press(k)}
+              className="btn-bounce rounded-2xl py-3 font-display text-[20px]"
+              style={{
+                background: k==="" ? "transparent" : "#FAFAFA",
+                color:"#2a1a55",
+                visibility: k==="" ? "hidden":"visible",
+                minHeight:60,
+                border:"1px solid #F1ECFA"
+              }}>{k}</button>
+          ))}
+        </div>
+        <button className="btn-bounce mt-4 w-full rounded-2xl py-3 font-display text-[16px] flex items-center justify-center gap-2"
+                style={{background:"#EFE7FF", color:"#6C3CE1", minHeight:48}}>
+          <span>←</span> Back to MathWorld
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Sticky header ---------- */
+function Header({ onLogout }){
+  const xpPct = (CHILD.xp / CHILD.xpMax)*100;
+  return (
+    <div className="sticky top-0 z-20 px-8 py-4 backdrop-blur"
+         style={{background:"rgba(250,250,250,.92)", borderBottom:"1px solid #F1ECFA"}}>
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <ArchieIcon size={56} level={CHILD.level}/>
+          <div className="leading-tight">
+            <div className="text-[11px] font-bold uppercase tracking-wider" style={{color:"#9ca3af"}}>Parent view</div>
+            <div className="font-display text-[24px]" style={{color:"#2a1a55"}}>Advaith's Progress</div>
+          </div>
+        </div>
+
+        {/* metric chips */}
+        <div className="flex items-center gap-3 ml-2 flex-1">
+          <Metric label="Archie's level" valueNode={
+            <div className="flex items-center gap-2">
+              <span className="font-display text-[20px]" style={{color:"#6C3CE1"}}>L{CHILD.level}</span>
+              <div className="w-[120px]">
+                <div className="h-2.5 rounded-full overflow-hidden" style={{background:"#EFE7FF"}}>
+                  <div className="h-full rounded-full shimmer" style={{width:`${xpPct}%`}}/>
+                </div>
+                <div className="text-[10px] font-bold mt-0.5" style={{color:"#6C3CE1"}}>{CHILD.xp} / {CHILD.xpMax} XP</div>
+              </div>
+            </div>
+          }/>
+          <Metric label="Total stars" valueNode={
+            <div className="flex items-center gap-1.5">
+              <svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 2 L14.6 9 L22 9.5 L16 14 L18.5 21 L12 17 L5.5 21 L8 14 L2 9.5 L9.4 9 Z" fill="#FFD93D" stroke="#FF6B35" strokeWidth="1"/></svg>
+              <span className="font-display text-[20px]" style={{color:"#FFB300"}}>{CHILD.stars}</span>
+            </div>
+          }/>
+          <Metric label="Day streak" valueNode={
+            <div className="flex items-center gap-1.5">
+              <span style={{fontSize:18}}>🔥</span>
+              <span className="font-display text-[20px]" style={{color:"#FF6B35"}}>{CHILD.streak}</span>
+            </div>
+          }/>
+          <Metric label="Last session" valueNode={
+            <div className="leading-tight">
+              <span className="font-display text-[16px]" style={{color:"#2a1a55"}}>{CHILD.lastSession.date}</span>
+              <span className="ml-1 text-[12px] font-bold" style={{color:"#6b7280"}}>· {CHILD.lastSession.duration} min</span>
+            </div>
+          }/>
+        </div>
+
+        <button onClick={onLogout} className="btn-bounce shrink-0 rounded-full px-4 py-2 font-bold text-[13px] whitespace-nowrap flex items-center gap-2"
+                style={{background:"#F4F1FB", color:"#6C3CE1", border:"1px solid #E5DCFA"}}>
+          <span>🔒</span> Lock
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Metric({label, valueNode}){
+  return (
+    <div className="px-3 py-1.5 rounded-xl" style={{background:"#fff", border:"1px solid #F1ECFA"}}>
+      <div className="text-[10px] font-bold uppercase tracking-wider" style={{color:"#9ca3af"}}>{label}</div>
+      <div className="mt-0.5">{valueNode}</div>
+    </div>
+  );
+}
+
+/* ---------- Skill grid ---------- */
+function SkillGrid(){
+  const groups = [1,2,3].map(L=>({
+    level:L,
+    label: L===1 ? "Level 1 — Class 1 Foundation" : L===2 ? "Level 2 — Class 2–3 Stretch" : "Level 3 — Class 3–4 Ceiling",
+    items: SKILLS.filter(s=>s.level===L)
+  }));
+  return (
+    <div className="card p-6">
+      <SectionHead
+        eyebrow="Skill graph"
+        title="Skill progress overview"
+        right={
+          <div className="flex items-center gap-3 text-[12px] font-bold">
+            <Legend dot="#6BCB77" label={`${SKILLS.filter(s=>s.status==='mastered').length} mastered`}/>
+            <Legend dot="#FFB300" label={`${SKILLS.filter(s=>s.status==='in').length} in progress`}/>
+            <Legend dot="#9CA3AF" label={`${SKILLS.filter(s=>s.status==='locked').length} locked`}/>
+          </div>
+        }
+      />
+      <div className="mt-5 flex flex-col gap-5">
+        {groups.map(g=>(
+          <div key={g.level}>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="font-display text-[15px]" style={{color:"#2a1a55"}}>{g.label}</span>
+              <span className="text-[12px] font-bold" style={{color:"#9ca3af"}}>· {g.items.length} skills</span>
+            </div>
+            <div className="grid grid-cols-4 gap-2.5">
+              {g.items.map(s=> <SkillCell key={s.id} s={s}/>)}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SkillCell({s}){
+  if (s.status === "mastered"){
+    return (
+      <div className="rounded-xl p-3 flex items-center gap-2.5" style={{background:"#EAFBEE", border:"1px solid #C4ECCB"}}>
+        <span className="grid place-items-center rounded-full shrink-0" style={{width:26,height:26,background:"#6BCB77",color:"#fff"}}>✓</span>
+        <div className="leading-tight min-w-0">
+          <div className="font-bold text-[13px] truncate" style={{color:"#1f7a3b"}}>{s.name}</div>
+          <div className="text-[11px] font-bold" style={{color:"#6BCB77"}}>Mastered</div>
+        </div>
+      </div>
+    );
+  }
+  if (s.status === "in"){
+    return (
+      <div className="rounded-xl p-3" style={{background:"#FFF8E0", border:"1px solid #F5E29A"}}>
+        <div className="flex items-center justify-between gap-2">
+          <div className="font-bold text-[13px] truncate" style={{color:"#2a1a55"}}>{s.name}</div>
+          <div className="font-display text-[13px] shrink-0" style={{color:"#B07700"}}>{Math.round(s.accuracy*100)}%</div>
+        </div>
+        <div className="h-1.5 rounded-full mt-1.5 overflow-hidden" style={{background:"#fff"}}>
+          <div className="h-full rounded-full" style={{width:`${s.accuracy*100}%`, background:"linear-gradient(90deg,#FFD93D,#FFB300)"}}/>
+        </div>
+        <div className="text-[10px] font-bold uppercase mt-1" style={{color:"#B07700"}}>In progress</div>
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-xl p-3 flex items-center gap-2.5" style={{background:"#F4F4F6", border:"1px dashed #D9D6E0"}}>
+      <span className="grid place-items-center rounded-full shrink-0" style={{width:26,height:26,background:"#E5E7EB",color:"#6b7280", fontSize:12}}>🔒</span>
+      <div className="leading-tight min-w-0">
+        <div className="font-bold text-[13px] truncate" style={{color:"#6b7280"}}>{s.name}</div>
+        <div className="text-[11px] font-bold uppercase" style={{color:"#9ca3af"}}>Locked</div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Weak areas ---------- */
+function WeakAreas(){
+  return (
+    <div className="card p-6 relative overflow-hidden">
+      <div className="absolute -right-10 -top-10 rounded-full" style={{width:200, height:200, background:"radial-gradient(circle, rgba(255,107,53,.10), transparent 70%)"}}/>
+      <SectionHead
+        eyebrow="Where to help"
+        title="Top 3 weak areas"
+        subtitle="Coaching prompts you can try at home this week."
+      />
+      <div className="mt-5 flex flex-col gap-3">
+        {WEAK.map((w,i)=>{
+          const E = ERROR_STYLES[w.error];
+          return (
+            <div key={i} className="rounded-2xl p-4" style={{background:"#FAF7FF", border:"1px solid #ECE3FF"}}>
+              <div className="flex items-start gap-3">
+                <div className="grid place-items-center rounded-2xl shrink-0 font-display text-[18px]"
+                     style={{width:42, height:42, background:E.bg, color:E.color}}>{i+1}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-display text-[17px] leading-tight" style={{color:"#2a1a55"}}>{w.skill}</div>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    <span className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide whitespace-nowrap"
+                          style={{background:E.bg, color:E.color}}>{E.label}</span>
+                    <span className="text-[11px] font-bold whitespace-nowrap" style={{color:"#9ca3af"}}>{w.attempts} attempts</span>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-2 text-[13px] font-semibold" style={{color:"#3a2a6e", lineHeight:1.5}}>{w.advice}</div>
+              <button className="btn-bounce mt-2 rounded-full px-3 py-1.5 font-bold text-[11px] whitespace-nowrap" style={{background:"#fff", color:"#6C3CE1", border:"1px solid #E5DCFA"}}>
+                Suggest activity →
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Sessions ---------- */
+function Sessions(){
+  return (
+    <div className="card p-6">
+      <SectionHead eyebrow="Recent activity" title="Last 7 sessions" subtitle="Date · skill · mode · accuracy · duration"/>
+      <div className="mt-5 overflow-hidden rounded-2xl" style={{border:"1px solid #F1ECFA"}}>
+        <div className="grid text-[11px] font-bold uppercase tracking-wider px-4 py-3"
+             style={{gridTemplateColumns:"110px 1fr 110px 110px 80px", color:"#9ca3af", background:"#FAF7FF"}}>
+          <div>Date</div><div>Skill</div><div>Mode</div><div>Accuracy</div><div className="text-right">Time</div>
+        </div>
+        {SESSIONS.map((s,i)=>{
+          const M = MODE_STYLES[s.mode];
+          return (
+            <div key={i} className="grid items-center px-4 py-3"
+                 style={{gridTemplateColumns:"110px 1fr 110px 110px 80px", borderTop:"1px solid #F1ECFA"}}>
+              <div className="font-bold text-[13px]" style={{color:"#2a1a55"}}>{s.date}</div>
+              <div className="font-bold text-[14px]" style={{color:"#2a1a55"}}>{s.skill}</div>
+              <div>
+                <span className="rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide"
+                      style={{background:M.bg, color:M.color}}>{s.mode}</span>
+              </div>
+              <div>
+                {s.acc==null
+                  ? <span className="text-[12px] font-bold" style={{color:"#9ca3af"}}>— no score</span>
+                  : <AccuracyPill val={s.acc}/>}
+              </div>
+              <div className="text-right font-display text-[14px]" style={{color:"#2a1a55"}}>{s.mins}<span className="text-[11px] font-bold ml-0.5" style={{color:"#9ca3af"}}>min</span></div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function AccuracyPill({val}){
+  const pct = Math.round(val*100);
+  const color = pct>=80 ? "#6BCB77" : pct>=60 ? "#FFB300" : "#FF6B6B";
+  const bg    = pct>=80 ? "#EAFBEE" : pct>=60 ? "#FFF8E0" : "#FFE9E9";
+  return (
+    <div className="flex items-center gap-2">
+      <div className="w-[60px] h-1.5 rounded-full overflow-hidden" style={{background:bg}}>
+        <div className="h-full rounded-full" style={{width:`${pct}%`, background:color}}/>
+      </div>
+      <span className="font-display text-[13px]" style={{color}}>{pct}%</span>
+    </div>
+  );
+}
+
+/* ---------- Weekly chart ---------- */
+function WeeklyChart(){
+  const max = Math.max(...WEEK.map(d=>d.mins), 30);
+  const total = WEEK.reduce((a,d)=>a+d.mins,0);
+  const activeDays = WEEK.filter(d=>d.mins>0).length;
+  const best = WEEK.reduce((a,b)=> b.mins>a.mins?b:a);
+  const dayName = {Mon:"Monday",Tue:"Tuesday",Wed:"Wednesday",Thu:"Thursday",Fri:"Friday",Sat:"Saturday",Sun:"Sunday"};
+
+  return (
+    <div className="card p-6">
+      <SectionHead
+        eyebrow="This week"
+        title="Daily activity"
+        right={<>
+          <div className="flex items-center gap-4 text-[12px] font-bold" style={{color:"#6b7280"}}>
+            <span><b className="font-display text-[16px]" style={{color:"#2a1a55"}}>{total}</b> min total</span>
+            <span><b className="font-display text-[16px]" style={{color:"#2a1a55"}}>{activeDays}</b>/7 active days</span>
+          </div>
+        </>}
+      />
+      <div className="mt-5 h-[160px] flex items-end gap-3 pl-10 pr-2 relative">
+        {/* y-axis hints */}
+        <div className="absolute left-0 top-0 bottom-6 flex flex-col justify-between text-[10px] font-bold" style={{color:"#9ca3af"}}>
+          <span>{max} min</span>
+          <span>{Math.round(max/2)} min</span>
+          <span>0</span>
+        </div>
+        {/* gridlines */}
+        <div className="absolute left-9 right-2 top-0 bottom-6 flex flex-col justify-between pointer-events-none">
+          <div className="border-t border-dashed" style={{borderColor:"#EFE7FF"}}/>
+          <div className="border-t border-dashed" style={{borderColor:"#EFE7FF"}}/>
+          <div className="border-t" style={{borderColor:"#E5DCFA"}}/>
+        </div>
+        {WEEK.map(d=>{
+          const h = d.mins===0 ? 4 : (d.mins/max)*130;
+          const isBest = d.day===best.day;
+          return (
+            <div key={d.day} className="flex-1 flex flex-col items-center gap-2 relative h-full justify-end">
+              {d.mins>0 && (
+                <div className="font-display text-[12px]" style={{color: isBest?"#6C3CE1":"#6b7280"}}>{d.mins}m</div>
+              )}
+              <div className="w-full rounded-t-lg relative"
+                   style={{
+                     height:h,
+                     background: d.mins===0 ? "#EFE7FF" : (isBest ? "linear-gradient(180deg,#A98AF7,#6C3CE1)" : "linear-gradient(180deg,#C7AFFA,#8B5DE8)")
+                   }}>
+                {isBest && (
+                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 rounded-full px-2 py-0.5 text-[10px] font-bold whitespace-nowrap"
+                       style={{background:"#FFD93D", color:"#6C3CE1", boxShadow:"0 4px 10px rgba(108,60,225,.25)"}}>★ best</div>
+                )}
+              </div>
+              <div className="text-[12px] font-bold pb-1" style={{color: isBest?"#6C3CE1":"#6b7280"}}>{d.day}</div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="mt-2 rounded-2xl px-4 py-3 flex items-start gap-3" style={{background:"#F4F1FB"}}>
+        <span className="grid place-items-center rounded-full shrink-0" style={{width:32,height:32, background:"#6C3CE1", color:"#fff"}}>✦</span>
+        <div className="font-bold text-[14px]" style={{color:"#2a1a55", lineHeight:1.5}}>
+          Advaith practiced <b style={{color:"#6C3CE1"}}>{activeDays} out of 7 days</b> this week — {total} minutes total.
+          Strongest day was <b style={{color:"#6C3CE1"}}>{dayName[best.day]}</b> with {best.mins} focused minutes.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- shared ---------- */
+function SectionHead({eyebrow, title, subtitle, right}){
+  return (
+    <div className="flex items-end justify-between gap-4">
+      <div>
+        <div className="text-[11px] font-bold uppercase tracking-wider" style={{color:"#9ca3af"}}>{eyebrow}</div>
+        <div className="font-display text-[22px] mt-0.5" style={{color:"#2a1a55"}}>{title}</div>
+        {subtitle && <div className="text-[13px] font-semibold mt-0.5" style={{color:"#6b7280"}}>{subtitle}</div>}
+      </div>
+      {right}
+    </div>
+  );
+}
+function Legend({dot,label}){
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className="inline-block rounded-full" style={{width:8,height:8,background:dot}}/>
+      <span style={{color:"#2a1a55"}}>{label}</span>
+    </span>
+  );
+}
+
+/* ---------- Dashboard ---------- */
+function Dashboard({onLogout}){
+  return (
+    <div className="w-full h-full overflow-y-auto scrollbar-soft">
+      <Header onLogout={onLogout}/>
+      <div className="px-8 pt-5 pb-10 grid gap-5" style={{gridTemplateColumns:"1.45fr 1fr"}}>
+        <div className="flex flex-col gap-5">
+          <SkillGrid/>
+          <Sessions/>
+        </div>
+        <div className="flex flex-col gap-5">
+          <WeakAreas/>
+          <WeeklyChart/>
+        </div>
+      </div>
+      <div className="px-8 pb-8 text-center text-[12px] font-bold" style={{color:"#9ca3af"}}>
+        MathWorld · Parent View · This view is private to you and never shown to Advaith.
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Root ---------- */
+function App(){
+  const [authed, setAuthed] = useState(false);
+  return (
+    <div className="w-full h-full">
+      {authed ? <Dashboard onLogout={()=>setAuthed(false)}/> : <PinScreen onSuccess={()=>setAuthed(true)}/>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
